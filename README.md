@@ -130,17 +130,6 @@ Cấu hình **cả VNeID lẫn BIDV** trong HMA-OSS:
    - `com.android.vending`
 4. Lặp lại cấu hình tương tự cho **BIDV** (`com.vnpay.bidv`)
 
-### Tricky Store (`target.txt`)
-
-```bash
-# Thêm VNeID vào danh sách target (cần chứng thực keybox phần cứng)
-echo "com.vnid" | su -c "tee -a /data/adb/tricky_store/target.txt"
-
-# ⚠️ KHÔNG thêm com.vnpay.bidv vào target.txt
-# BIDV dùng DexProtector, xung đột với keybox giả lập
-# (gây ra KeyPermanentlyInvalidatedException khi đăng nhập)
-```
-
 ### BIDV SmartBanking — Loại trừ TN ToolBox (chỉ ROM Xiaomi.eu)
 
 Nếu ROM có tính năng TN ToolBox Keybox, chạy lệnh sau để loại trừ BIDV:
