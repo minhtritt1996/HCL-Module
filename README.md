@@ -83,11 +83,15 @@ Module sử dụng **3 lớp che giấu** — không sửa phân vùng hệ th�
 | **Zygisk** | Zygisk Next (khuyến nghị) hoặc Magisk Zygisk tích hợp |
 | **SuSFS** *(tùy chọn nhưng khuyến nghị)* | Kernel có hỗ trợ SuSFS (Wild Kernel, ShirkNeko, v.v.) |
 | **HMA-OSS** | Hide My Applist (bản OSS Zygisk) |
-| **Tricky Store** | Bản AlwaysStrong kèm file `keybox.xml` hợp lệ |
+| **Play Integrity** *(tùy theo ROM)* | Xem ghi chú bên dưới |
 | **susfs4ksu** | Nếu dùng kernel có SuSFS |
 | **Android** | Android 12 trở lên |
 
 > **Không có SuSFS:** Module vẫn hoạt động qua `resetprop` (Lớp 1), nhưng các app dùng mã native để đọc trực tiếp `build.prop` (như VNeID v2.2.x+) có thể vẫn phát hiện ROM. Kernel có SuSFS cho phép che giấu hoàn toàn ở cấp kernel.
+
+> **Play Integrity — ROM nào cần cài thêm gì?**
+> - **ROM đã tích hợp keybox sẵn** (ví dụ: HyperTN, các bản port có TN ToolBox): **Không cần cài thêm** AlwaysStrong hay TrickyStore. ROM đã tự lo phần chứng thực Play Integrity.
+> - **ROM chưa có keybox** (ví dụ: Xiaomi.eu, AOSP port thuần): Cần cài thêm **AlwaysStrong** (bao gồm cả TrickyStore + keybox) để đạt `MEETS_STRONG_INTEGRITY`.
 
 ---
 
@@ -99,8 +103,8 @@ Cài các module này trước qua KernelSU / Magisk Manager:
 
 1. **Zygisk Next** — [GitHub](https://github.com/Dr-TSNG/ZygiskNext)
 2. **HMA-OSS** (Hide My Applist) — [GitHub](https://github.com/Dr-TSNG/Hide-My-Applist)
-3. **Tricky Store** (bản AlwaysStrong) — [Telegram @keyboxstrong](https://t.me/keyboxstrong)
-4. **susfs4ksu** — [GitHub](https://github.com/sidex15/susfs4ksu-module) *(nếu kernel hỗ trợ SuSFS)*
+3. **susfs4ksu** — [GitHub](https://github.com/sidex15/susfs4ksu-module) *(nếu kernel hỗ trợ SuSFS)*
+4. **AlwaysStrong** (TrickyStore + keybox) — [GitHub](https://github.com/evoker0/AlwaysStrong) *(chỉ cần cài nếu ROM **chưa có keybox tích hợp sẵn**, ví dụ Xiaomi.eu. Các ROM như HyperTN đã có TN ToolBox keybox — **bỏ qua bước này**)*
 
 ### Bước 2 — Cài VNeID Fix Module
 
@@ -109,20 +113,6 @@ Cài các module này trước qua KernelSU / Magisk Manager:
 3. Chọn file ZIP vừa tải
 4. Khởi động lại máy
 
-### Bước 3 — Xác nhận cài đặt
-
-```bash
-# Kiểm tra module đang hoạt động (mount: false = đúng, không cần metamodule)
-su -c "cat /data/adb/modules/xiaomieu_vneid_cloak/module.prop"
-
-# Xác nhận build.host đã sạch
-su -c "getprop ro.build.host"
-# Kết quả mong đợi: c5-build-66.bj.xiaomi.com
-
-# Xác nhận không còn dấu vết Xiaomi.eu
-su -c "getprop | grep -i xiaomi.eu"
-# Kết quả mong đợi: không có gì (trống)
-```
 
 ---
 
