@@ -2,156 +2,158 @@
 
 # 🛡️ VNeID Fix Module
 
-**Xiaomi.eu Cloak & VNeID Fix — Magisk / KernelSU / APatch Module**
+**Xiaomi.eu Cloak & VNeID Fix — Module cho Magisk / KernelSU / APatch**
 
-[![Version](https://img.shields.io/badge/version-v1.1.0-blue?style=flat-square)](https://github.com/minhtritt1996/VNeID-Fix-Module/releases)
-[![License](https://img.shields.io/badge/license-MIT-green?style=flat-square)](LICENSE)
-[![Tested On](https://img.shields.io/badge/tested%20on-POCO%20F5%20Pro%20%7C%20HyperOS%203-orange?style=flat-square)](#tested-devices)
-[![Root](https://img.shields.io/badge/root-KernelSU%20%7C%20APatch%20%7C%20Magisk-red?style=flat-square)](#requirements)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.1.0-blue?style=flat-square)](https://github.com/minhtritt1996/VNeID-Fix-Module/releases)
+[![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
+[![Đã thử nghiệm](https://img.shields.io/badge/đã_thử-POCO_F5_Pro_%7C_HyperOS_3-orange?style=flat-square)](#thiết-bị-đã-thử-nghiệm)
+[![Root](https://img.shields.io/badge/root-KernelSU_%7C_APatch_%7C_Magisk-red?style=flat-square)](#yêu-cầu)
 
-A universal Magisk/KernelSU/APatch module that cloaks **Xiaomi.eu / Custom HyperOS ROM signatures** to allow **VNeID** (`com.vnid`) and Vietnamese banking apps (e.g. **BIDV SmartBanking** `com.vnpay.bidv`) to pass security checks — including **Circular 77/2025/TT-NHNN** device integrity verification.
+Module phổ quát dành cho người dùng cài **ROM Xiaomi.eu / Custom HyperOS**, giúp che giấu hoàn toàn dấu vết ROM tùy chỉnh để các ứng dụng nhạy cảm của Việt Nam hoạt động bình thường — bao gồm **VNeID** (`com.vnid`) và các ứng dụng ngân hàng như **BIDV SmartBanking** (`com.vnpay.bidv`).
 
 </div>
 
 ---
 
-## 📖 Table of Contents
+## 📖 Mục Lục
 
-- [Problem Statement](#-problem-statement)
-- [How It Works](#-how-it-works)
-- [Requirements](#-requirements)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Tested Devices](#-tested-devices)
-- [FAQ](#-faq)
-- [Technical Details](docs/TECHNICAL.md)
-- [Contributing](#-contributing)
-- [License](#-license)
+- [Vấn đề cần giải quyết](#-vấn-đề-cần-giải-quyết)
+- [Cách hoạt động](#-cách-hoạt-động)
+- [Yêu cầu](#-yêu-cầu)
+- [Cài đặt](#-cài-đặt)
+- [Cấu hình sau khi cài](#-cấu-hình-sau-khi-cài)
+- [Kiểm tra nhanh](#-kiểm-tra-nhanh)
+- [Thiết bị đã thử nghiệm](#-thiết-bị-đã-thử-nghiệm)
+- [Câu hỏi thường gặp](#-câu-hỏi-thường-gặp)
+- [Tài liệu kỹ thuật](docs/TECHNICAL.md)
+- [Đóng góp](docs/CONTRIBUTING.md)
 
 ---
 
-## ❓ Problem Statement
+## ❓ Vấn Đề Cần Giải Quyết
 
-When running **Xiaomi.eu ROM** (unofficial Xiaomi Global ROM) or any **Custom HyperOS / MIUI port**, several critical Vietnamese government and banking apps refuse to launch:
+Khi cài **ROM Xiaomi.eu** (bản ROM Global không chính thức của Xiaomi) hoặc **Custom HyperOS / MIUI port**, các ứng dụng quan trọng sau đây sẽ từ chối khởi động:
 
-| App | Error |
+| Ứng dụng | Thông báo lỗi |
 |---|---|
 | **VNeID** (`com.vnid`) | *"Thiết bị của bạn đã bị bẻ khóa / cài ROM không chính thức"* |
 | **BIDV SmartBanking** (`com.vnpay.bidv`) | *"Thiết bị di động đã bị bẻ khóa và KHÔNG đủ điều kiện an toàn theo Thông tư 77/2025/TT-NHNN"* |
-| Other banking apps | Security tampering detected |
+| Các ứng dụng ngân hàng khác | Phát hiện môi trường bị can thiệp |
 
-**Root cause:** Xiaomi.eu injects custom identifiers into `build.prop` and ships exclusive system APKs (`XiaomiEUExt.apk`, `MiuiExtraPhoto.apk`) that are detected by these apps via both Java reflection and native C/C++ code scanning.
+**Nguyên nhân gốc rễ:**
 
----
-
-## ⚙️ How It Works
-
-The module uses a **3-layer cloaking strategy** — no system partition modification, no overlay mount, fully reversible:
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│  Layer 1: Property Spoofing (RAM-level, via resetprop)       │
-│  • Removes ro.xiaomi.eu.*, ro.xiaomi.developerid             │
-│  • Strips _xiaomieu suffix from ro.product.mod_device        │
-│  • Restores ro.build.host to official Xiaomi build server    │
-│  • Preserves _global suffix (prevents modem/SIM breakage)   │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 2: build.prop File Redirect (SuSFS kernel-level)      │
-│  • Generates a clean_build.prop during install               │
-│  • When an app reads /system/build.prop, the kernel          │
-│    transparently returns clean_build.prop instead            │
-│  • UID scheme 3: only affects userland apps (uid ≥ 10000)   │
-│  • Does NOT affect init, rild, or system daemons             │
-├──────────────────────────────────────────────────────────────┤
-│  Layer 3: sus_path Hiding (SuSFS kernel-level)               │
-│  • Hides /product/priv-app/XiaomiEUExt from app scanners    │
-│  • Hides /product/priv-app/MiuiExtraPhoto                   │
-└──────────────────────────────────────────────────────────────┘
-```
-
-> **Safe execution model:** All hooks run in `service.sh` **after** `sys.boot_completed=1`. Nothing runs in `post-fs-data.sh`. This prevents modem (`rild`) crashes, bootloops, and SIM signal loss.
+ROM Xiaomi.eu nhúng các định danh đặc trưng vào `build.prop` và cài sẵn hai APK hệ thống riêng (`XiaomiEUExt.apk`, `MiuiExtraPhoto.apk`). Các ứng dụng như VNeID sử dụng cả **Java reflection** lẫn **mã C/C++ native** để quét trực tiếp hệ thống tệp — do đó các phương pháp ẩn thông thường chỉ dựa vào `resetprop` là chưa đủ.
 
 ---
 
-## 📋 Requirements
+## ⚙️ Cách Hoạt Động
 
-| Component | Requirement |
+Module sử dụng **3 lớp che giấu** — không sửa phân vùng hệ thống, không overlay, hoàn toàn có thể gỡ bỏ:
+
+```
+┌──────────────────────────────────────────────────────────────────┐
+│  Lớp 1: Giả mạo thuộc tính hệ thống (RAM, qua resetprop)        │
+│  • Xóa ro.xiaomi.eu.*, ro.xiaomi.developerid                     │
+│  • Loại bỏ hậu tố _xiaomieu khỏi ro.product.mod_device          │
+│  • Khôi phục ro.build.host về máy chủ build chính thức Xiaomi   │
+│  • Giữ nguyên hậu tố _global (tránh lỗi sóng/modem)            │
+├──────────────────────────────────────────────────────────────────┤
+│  Lớp 2: Chuyển hướng đọc file build.prop (SuSFS cấp kernel)     │
+│  • Tạo clean_build.prop đã lọc sạch trong lúc cài               │
+│  • Khi app đọc /system/build.prop, kernel tự động trả về         │
+│    clean_build.prop thay thế                                      │
+│  • UID Scheme 3: chỉ ảnh hưởng app người dùng (uid ≥ 10000)     │
+│  • KHÔNG ảnh hưởng init, rild (daemon sóng viễn thông)           │
+├──────────────────────────────────────────────────────────────────┤
+│  Lớp 3: Ẩn APK hệ thống Xiaomi.eu (SuSFS cấp kernel)            │
+│  • Ẩn /product/priv-app/XiaomiEUExt khỏi trình quét native      │
+│  • Ẩn /product/priv-app/MiuiExtraPhoto                           │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+> **Cơ chế khởi động an toàn:** Toàn bộ hook chỉ chạy trong `service.sh` **sau khi** `sys.boot_completed=1`. Không có gì chạy trong `post-fs-data.sh`. Điều này ngăn daemon sóng viễn thông (`rild`) bị crash, tránh bootloop và mất sóng SIM.
+
+---
+
+## 📋 Yêu Cầu
+
+| Thành phần | Yêu cầu |
 |---|---|
 | **Root** | KernelSU / KernelSU Next / APatch / Magisk (v26+) |
-| **Zygisk** | Zygisk Next (recommended) or built-in Magisk Zygisk |
-| **SuSFS** *(optional but recommended)* | Kernel with SuSFS support (e.g. Wild Kernel, ShirkNeko) |
-| **HMA-OSS** | Hide My Applist (OSS Zygisk variant) |
-| **Tricky Store** | AlwaysStrong build with valid `keybox.xml` |
-| **susfs4ksu** | If using SuSFS kernel |
-| **Android** | Android 12 or higher |
+| **Zygisk** | Zygisk Next (khuyến nghị) hoặc Magisk Zygisk tích hợp |
+| **SuSFS** *(tùy chọn nhưng khuyến nghị)* | Kernel có hỗ trợ SuSFS (Wild Kernel, ShirkNeko, v.v.) |
+| **HMA-OSS** | Hide My Applist (bản OSS Zygisk) |
+| **Tricky Store** | Bản AlwaysStrong kèm file `keybox.xml` hợp lệ |
+| **susfs4ksu** | Nếu dùng kernel có SuSFS |
+| **Android** | Android 12 trở lên |
 
-> **Without SuSFS:** The module still works via `resetprop` only. Apps using native `/proc/self/maps` or direct file reads of `build.prop` may still detect the ROM. SuSFS provides kernel-level isolation for full cloaking.
+> **Không có SuSFS:** Module vẫn hoạt động qua `resetprop` (Lớp 1), nhưng các app dùng mã native để đọc trực tiếp `build.prop` (như VNeID v2.2.x+) có thể vẫn phát hiện ROM. Kernel có SuSFS cho phép che giấu hoàn toàn ở cấp kernel.
 
 ---
 
-## 🚀 Installation
+## 🚀 Cài Đặt
 
-### Step 1 — Install required modules
+### Bước 1 — Cài các module nền tảng
 
-Install these modules first via your root manager (KernelSU / Magisk):
+Cài các module này trước qua KernelSU / Magisk Manager:
 
 1. **Zygisk Next** — [GitHub](https://github.com/Dr-TSNG/ZygiskNext)
 2. **HMA-OSS** (Hide My Applist) — [GitHub](https://github.com/Dr-TSNG/Hide-My-Applist)
-3. **Tricky Store** (AlwaysStrong build) — [Telegram @keyboxstrong](https://t.me/keyboxstrong)
-4. **susfs4ksu** — [GitHub](https://github.com/sidex15/susfs4ksu-module) *(if your kernel supports SuSFS)*
+3. **Tricky Store** (bản AlwaysStrong) — [Telegram @keyboxstrong](https://t.me/keyboxstrong)
+4. **susfs4ksu** — [GitHub](https://github.com/sidex15/susfs4ksu-module) *(nếu kernel hỗ trợ SuSFS)*
 
-### Step 2 — Install VNeID Fix Module
+### Bước 2 — Cài VNeID Fix Module
 
-1. Download the latest release: [`xiaomieu_vneid_cloak_v1.1.0.zip`](https://github.com/minhtritt1996/VNeID-Fix-Module/releases/latest)
-2. Open your root manager → **Modules** → **Install from storage**
-3. Select the downloaded ZIP
-4. Reboot
+1. Tải phiên bản mới nhất: [`VNeID-Fix-Module-v1.1.0.zip`](https://github.com/minhtritt1996/VNeID-Fix-Module/releases/latest)
+2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài từ bộ nhớ**
+3. Chọn file ZIP vừa tải
+4. Khởi động lại máy
 
-### Step 3 — Verify installation
+### Bước 3 — Xác nhận cài đặt
 
 ```bash
-# Check module is active (mount: false = correct, no metamodule needed)
+# Kiểm tra module đang hoạt động (mount: false = đúng, không cần metamodule)
 su -c "cat /data/adb/modules/xiaomieu_vneid_cloak/module.prop"
 
-# Verify build.host is clean
+# Xác nhận build.host đã sạch
 su -c "getprop ro.build.host"
-# Expected: c5-build-66.bj.xiaomi.com
+# Kết quả mong đợi: c5-build-66.bj.xiaomi.com
 
-# Verify Xiaomi.eu identifiers are gone
+# Xác nhận không còn dấu vết Xiaomi.eu
 su -c "getprop | grep -i xiaomi.eu"
-# Expected: empty output
+# Kết quả mong đợi: không có gì (trống)
 ```
 
 ---
 
-## ⚙️ Configuration
+## ⚙️ Cấu Hình Sau Khi Cài
 
 ### HMA-OSS (Hide My Applist)
 
-Configure **both** VNeID and BIDV in HMA-OSS:
+Cấu hình **cả VNeID lẫn BIDV** trong HMA-OSS:
 
-1. Open HMA-OSS → select **VNeID** (`com.vnid`) → enable **Whitelist mode**
-2. Apply presets: `Custom ROM`, `Detector Apps`, `Root Apps`, `Shizuku/Dhizuku`, `Sus Apps`, `Xposed`, `Dev Options`
-3. **Extra App List** (apps VNeID is allowed to see):
+1. Mở HMA-OSS → chọn **VNeID** (`com.vnid`) → bật **Chế độ Danh sách trắng (Whitelist)**
+2. Áp dụng các mẫu (Presets): `Custom ROM`, `Detector Apps`, `Root Apps`, `Shizuku/Dhizuku`, `Sus Apps`, `Xposed`, `Dev Options`
+3. **Ứng dụng được phép nhìn thấy** (Extra App List):
    - `com.google.android.webview`
    - `com.google.android.gms`
    - `com.android.vending`
-4. Repeat the same configuration for **BIDV** (`com.vnpay.bidv`)
+4. Lặp lại cấu hình tương tự cho **BIDV** (`com.vnpay.bidv`)
 
 ### Tricky Store (`target.txt`)
 
 ```bash
-# Add VNeID to target list (requires hardware-backed keybox attestation)
+# Thêm VNeID vào danh sách target (cần chứng thực keybox phần cứng)
 echo "com.vnid" | su -c "tee -a /data/adb/tricky_store/target.txt"
 
-# ⚠️ DO NOT add com.vnpay.bidv to target.txt
-# BIDV uses DexProtector which conflicts with simulated keybox keys
-# (causes KeyPermanentlyInvalidatedException)
+# ⚠️ KHÔNG thêm com.vnpay.bidv vào target.txt
+# BIDV dùng DexProtector, xung đột với keybox giả lập
+# (gây ra KeyPermanentlyInvalidatedException khi đăng nhập)
 ```
 
-### BIDV SmartBanking — TN ToolBox exclusion (Xiaomi.eu only)
+### BIDV SmartBanking — Loại trừ TN ToolBox (chỉ ROM Xiaomi.eu)
 
-If your ROM has the Xiaomi.eu TN ToolBox keybox feature, exclude BIDV:
+Nếu ROM có tính năng TN ToolBox Keybox, chạy lệnh sau để loại trừ BIDV:
 
 ```bash
 su -c "settings put global tn_keybox_out \
@@ -160,72 +162,92 @@ su -c "settings put global tn_keybox_out \
 
 ---
 
-## ✅ Tested Devices
+## ✅ Kiểm Tra Nhanh
 
-| Device | Codename | ROM | Root | SuSFS | VNeID | BIDV |
+| Mục kiểm tra | Kết quả cần đạt | Lệnh kiểm tra |
+|---|---|---|
+| **SELinux** | `Enforcing` | `su -c "getenforce"` |
+| **Play Integrity** | MEETS_DEVICE & STRONG | App Play Integrity Checker |
+| **Build host** | `c5-build-66.bj.xiaomi.com` | `su -c "getprop ro.build.host"` |
+| **Dấu vết Xiaomi.eu** | Không có | `su -c "getprop \| grep -i xiaomi.eu"` |
+| **XiaomiEUExt** | Đã ẩn | `su -c "ls /product/priv-app/XiaomiEUExt"` → báo lỗi |
+| **Tùy chọn nhà phát triển** | Tắt | Cài đặt → Cài đặt bổ sung → Tùy chọn nhà phát triển |
+| **USB Debugging (ADB)** | Tắt | Tắt trong Tùy chọn nhà phát triển |
+
+---
+
+## 📱 Thiết Bị Đã Thử Nghiệm
+
+| Thiết bị | Codename | ROM | Root | SuSFS | VNeID | BIDV |
 |---|---|---|---|---|---|---|
 | POCO F5 Pro | `mondrian` | Xiaomi.eu HyperOS 3.0 (Android 15) | KernelSU + Wild Kernel | ✅ v2.3.0 | ✅ | ✅ |
 
-> Want to add your device? See [CONTRIBUTING.md](docs/CONTRIBUTING.md).
+> Muốn thêm thiết bị của bạn? Xem [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
 ---
 
-## ❓ FAQ
+## ❓ Câu Hỏi Thường Gặp
 
 <details>
-<summary><b>Q: Does this work without SuSFS?</b></summary>
+<summary><b>Module có hoạt động không nếu máy không có SuSFS?</b></summary>
 
-Yes, but with limited protection. Without SuSFS, only the `resetprop` layer (Layer 1) applies. Apps using native code to directly `open()` and `read()` `/system/build.prop` (like VNeID's internal C scanner) will still see the original file. A SuSFS-capable kernel provides full kernel-level redirect.
+Có, nhưng bảo vệ sẽ không đầy đủ. Không có SuSFS, chỉ Lớp 1 (`resetprop`) được áp dụng. Các app dùng mã native để `open()` và đọc trực tiếp `/system/build.prop` (như scanner C trong VNeID v2.2.x+) vẫn sẽ thấy file gốc. Kernel có SuSFS cung cấp lớp bảo vệ đầy đủ ở cấp kernel.
 </details>
 
 <details>
-<summary><b>Q: Why doesn't the module have a /system folder? (mount: false warning)</b></summary>
+<summary><b>Tại sao module không có thư mục /system? (cảnh báo mount: false)</b></summary>
 
-This is by design. Including a `/system` directory would require a metamodule (e.g. Magic Mount) and would show a *"module not mounted because metamodule not installed"* warning in KernelSU/ReSukiSU. This module is script-only (`mount: false`) and handles everything via `resetprop` and SuSFS hooks — no overlay filesystem needed.
+Đây là thiết kế có chủ ý. Nếu có thư mục `/system`, module sẽ yêu cầu một metamodule (như Magic Mount) và hiện cảnh báo *"module không được mount vì metamodule chưa cài"* trong KernelSU/ReSukiSU. Module này hoạt động thuần script (`mount: false`), xử lý mọi thứ qua `resetprop` và SuSFS hook — không cần overlay filesystem.
 </details>
 
 <details>
-<summary><b>Q: I got a bootloop after installing!</b></summary>
+<summary><b>Tôi bị bootloop sau khi cài!</b></summary>
 
-This should not happen with v1.1.0. If it does:
-1. Boot into Recovery
-2. Navigate to `/data/adb/modules/xiaomieu_vneid_cloak/`
-3. Create an empty file named `disable`
-4. Reboot
+Điều này không nên xảy ra với v1.1.0. Nếu có:
+1. Khởi động vào Recovery
+2. Vào thư mục `/data/adb/modules/xiaomieu_vneid_cloak/`
+3. Tạo file rỗng tên `disable`
+4. Khởi động lại
 
-The known cause of bootloops in earlier versions was running `open_redirect` in `post-fs-data.sh` before the modem partition was accessible. v1.1.0 exclusively runs everything in `service.sh` after boot completes.
+Nguyên nhân bootloop từng gặp ở phiên bản cũ là chạy `open_redirect` trong `post-fs-data.sh` trước khi phân vùng modem sẵn sàng. v1.1.0 chỉ chạy mọi thứ trong `service.sh` sau khi boot hoàn tất.
 </details>
 
 <details>
-<summary><b>Q: My SIM lost signal after installing!</b></summary>
+<summary><b>SIM mất sóng sau khi cài!</b></summary>
 
-Make sure the module is NOT modifying `ro.product.mod_device` in a way that strips `_global` from your device codename. For Global devices (e.g. `mondrian_global`), the module preserves the `_global` suffix to keep carrier config correct. If you're on a China model flashed with Global ROM, see [docs/TECHNICAL.md](docs/TECHNICAL.md#modem-safety).
+Đảm bảo module không xóa hậu tố `_global` khỏi `ro.product.mod_device`. Với các máy Global (như POCO F5 Pro `mondrian_global`), module giữ nguyên `_global` để cấu hình carrier (Viettel, VinaPhone, MobiFone) không bị sai. Nếu bạn gặp vấn đề này, xem [docs/TECHNICAL.md](docs/TECHNICAL.md#modem-safety).
 </details>
 
 <details>
-<summary><b>Q: Can I use this on LineageOS?</b></summary>
+<summary><b>Kết quả Play Integrity hiện UNEVALUATED là sao?</b></summary>
 
-Not directly — LineageOS has different ROM identifiers. The main changes needed are:
-- Replace Xiaomi.eu `build.prop` filters with `lineage.*` property removal
-- Add `resetprop ro.build.type user` (LineageOS defaults to `userdebug`)
-- Remove `ro.debuggable=1` spoofing
-- Skip `mod_device` and `XiaomiEUExt` handling
+`UNEVALUATED` xuất hiện khi Google Play Services không kết nối được đến máy chủ xác thực của Google — thường xảy ra khi mạng chưa ổn định, vừa thay SIM, hoặc vừa bật/tắt chế độ máy bay. Không liên quan đến module này. Kiểm tra lại khi mạng ổn định là sẽ về `MEETS_DEVICE_INTEGRITY` / `MEETS_STRONG_INTEGRITY` bình thường.
+</details>
 
-A LineageOS variant is planned. See [Issue tracker](https://github.com/minhtritt1996/VNeID-Fix-Module/issues).
+<details>
+<summary><b>Module này có dùng được trên LineageOS không?</b></summary>
+
+Không trực tiếp — LineageOS có bộ định danh ROM khác. Các thay đổi cần thiết:
+- Thay bộ lọc `xiaomi.eu` bằng lọc `lineage.*`
+- Thêm `resetprop ro.build.type user` (LineageOS mặc định là `userdebug`)
+- Xử lý `ro.debuggable=1`
+- Bỏ phần xử lý `mod_device` và `XiaomiEUExt`
+
+Phiên bản hỗ trợ LineageOS đang được lên kế hoạch. Xem [issue tracker](https://github.com/minhtritt1996/VNeID-Fix-Module/issues).
 </details>
 
 ---
 
-## 🤝 Contributing
+## 🤝 Đóng Góp
 
-Pull requests are welcome! Please read [CONTRIBUTING.md](docs/CONTRIBUTING.md) first.
+Mọi Pull Request đều được chào đón! Vui lòng đọc [CONTRIBUTING.md](docs/CONTRIBUTING.md) trước.
 
-- Found a bug? [Open an issue](https://github.com/minhtritt1996/VNeID-Fix-Module/issues)
-- Tested on a new device? Submit a PR adding your device to the compatibility table
-- Want to add LineageOS support? Check the open issues for a tracking issue
+- Tìm thấy lỗi? [Mở issue](https://github.com/minhtritt1996/VNeID-Fix-Module/issues)
+- Đã thử nghiệm trên thiết bị mới? Gửi PR thêm thiết bị vào bảng tương thích
+- Muốn thêm hỗ trợ LineageOS? Xem các issue đang mở
 
 ---
 
-## 📄 License
+## 📄 Giấy Phép
 
 [MIT License](LICENSE) — © 2026 [minhtritt1996](https://github.com/minhtritt1996)
