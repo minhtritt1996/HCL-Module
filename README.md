@@ -9,7 +9,7 @@
 [![Đã thử nghiệm](https://img.shields.io/badge/đã_thử-POCO_F5_Pro_%7C_HyperOS_3-orange?style=flat-square)](#thiết-bị-đã-thử-nghiệm)
 [![Root](https://img.shields.io/badge/root-KernelSU_%7C_APatch_%7C_Magisk-red?style=flat-square)](#yêu-cầu)
 
-Module phổ quát dành cho người dùng cài **ROM Xiaomi.eu / Custom HyperOS**, giúp che giấu hoàn toàn dấu vết ROM tùy chỉnh để các ứng dụng nhạy cảm của Việt Nam hoạt động bình thường — bao gồm **VNeID** (`com.vnid`) và các ứng dụng ngân hàng như **BIDV SmartBanking** (`com.vnpay.bidv`).
+Module phổ quát dành cho người dùng cài **ROM Xiaomi.eu / Custom HyperOS**, giúp che giấu hoàn toàn dấu vết ROM tùy chỉnh để các ứng dụng nhạy cảm của Việt Nam hoạt động bình thường — bao gồm **VNeID** (`com.vnid`), **BIDV SmartBanking** (`com.vnpay.bidv`) và **MB Bank** (`com.mbmobile`).
 
 </div>
 
@@ -38,6 +38,7 @@ Khi cài **ROM Xiaomi.eu** (bản ROM Global không chính thức của Xiaomi) 
 |---|---|
 | **VNeID** (`com.vnid`) | *"Thiết bị của bạn đã bị bẻ khóa / cài ROM không chính thức"* |
 | **BIDV SmartBanking** (`com.vnpay.bidv`) | *"Thiết bị di động đã bị bẻ khóa và KHÔNG đủ điều kiện an toàn theo Thông tư 77/2025/TT-NHNN"* |
+| **MB Bank** (`com.mbmobile`) | *"Phát hiện thiết bị root hoặc jailbreak"* |
 | Các ứng dụng ngân hàng khác | Phát hiện môi trường bị can thiệp |
 
 **Nguyên nhân gốc rễ:**
@@ -120,23 +121,32 @@ Cài các module này trước qua KernelSU / Magisk Manager:
 
 ### HMA-OSS (Hide My Applist)
 
-Cấu hình **cả VNeID lẫn BIDV** trong HMA-OSS:
+Cấu hình cho **VNeID, BIDV và MB Bank** trong HMA-OSS:
 
-1. Mở HMA-OSS → chọn **VNeID** (`com.vnid`) → bật **Chế độ Danh sách trắng (Whitelist)**
-2. Áp dụng các mẫu (Presets): `Custom ROM`, `Detector Apps`, `Root Apps`, `Shizuku/Dhizuku`, `Sus Apps`, `Xposed`, `Dev Options`
+1. Mở HMA-OSS → chọn ứng dụng cần bảo vệ (`com.vnid`, `com.vnpay.bidv`, `com.mbmobile`) → bật **Chế độ Danh sách trắng (Whitelist)**.
+2. Áp dụng các mẫu (Presets): `Custom ROM`, `Detector Apps`, `Root Apps`, `Shizuku/Dhizuku`, `Sus Apps`, `Xposed`, `Dev Options`.
 3. **Ứng dụng được phép nhìn thấy** (Extra App List):
    - `com.google.android.webview`
    - `com.google.android.gms`
    - `com.android.vending`
-4. Lặp lại cấu hình tương tự cho **BIDV** (`com.vnpay.bidv`)
 
-### BIDV SmartBanking — Loại trừ TN ToolBox (chỉ ROM Xiaomi.eu)
+> [!TIP]
+> Bạn có thể vào mục **Quản lý mẫu** trong HMA-OSS để tạo một mẫu Whitelist dùng chung (ví dụ: `Banking_Shield` chứa 3 app Google ở trên). Với các app ngân hàng cài sau này, chỉ cần chọn áp dụng mẫu là xong, không phải chọn lại từng app.
 
-Nếu ROM có tính năng TN ToolBox Keybox, chạy lệnh sau để loại trừ BIDV:
+### Lưu ý quan trọng với module AlwaysStrong & App Ngân Hàng
+
+Module AlwaysStrong có cơ chế tự động quét và thêm tất cả ứng dụng trên máy vào `/data/adb/tricky_store/target.txt`.
+- Các ứng dụng ngân hàng như **BIDV** (`com.vnpay.bidv`) và **MB Bank** (`com.mbmobile`) có cơ chế tự kiểm tra chứng chỉ KeyStore phần cứng. Khi bị Tricky Store can thiệp keybox ảo, app sẽ báo *"Thiết bị bị bẻ khóa"* hoặc lỗi xác thực (`KeyPermanentlyInvalidatedException`).
+- **Cách xử lý:** Nếu sau khi cài AlwaysStrong mà BIDV hoặc MB Bank báo bẻ khóa, bạn chỉ cần mở file `/data/adb/tricky_store/target.txt` và **xóa dòng `com.vnpay.bidv` và `com.mbmobile`** đi.
+- **Lưu ý về Tùy chọn nhà phát triển:** Riêng với MB Bank, máy bắt buộc phải **TẮT Tùy chọn nhà phát triển** và **TẮT Gỡ lỗi USB (ADB)** thì mới vào được.
+
+### BIDV & MB Bank — Loại trừ TN ToolBox (ROM có tích hợp Keybox)
+
+Nếu ROM có tính năng TN ToolBox Keybox, chạy lệnh sau để loại trừ cả BIDV và MB Bank:
 
 ```bash
 su -c "settings put global tn_keybox_out \
-  \"\$(settings get global tn_keybox_out),com.vnpay.bidv\""
+  \"\$(settings get global tn_keybox_out),com.vnpay.bidv,com.mbmobile\""
 ```
 
 ---
@@ -157,9 +167,9 @@ su -c "settings put global tn_keybox_out \
 
 ## 📱 Thiết Bị Đã Thử Nghiệm
 
-| Thiết bị | Codename | ROM | Root | SuSFS | VNeID | BIDV |
-|---|---|---|---|---|---|---|
-| POCO F5 Pro | `mondrian` | Xiaomi.eu HyperOS 3.0 (Android 15) | KernelSU + Wild Kernel | ✅ v2.3.0 | ✅ | ✅ |
+| Thiết bị | Codename | ROM | Root | SuSFS | VNeID | BIDV | MB Bank |
+|---|---|---|---|---|---|---|---|
+| POCO F5 Pro | `mondrian` | Xiaomi.eu HyperOS 3.0 (Android 15) | KernelSU + Wild Kernel | ✅ v2.3.0 | ✅ | ✅ | ✅ |
 
 > Muốn thêm thiết bị của bạn? Xem [CONTRIBUTING.md](docs/CONTRIBUTING.md).
 
