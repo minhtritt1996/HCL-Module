@@ -138,7 +138,7 @@ Cấu hình cho **VNeID, BIDV và MB Bank** trong HMA-OSS:
 Module AlwaysStrong có cơ chế tự động quét và thêm tất cả ứng dụng trên máy vào `/data/adb/tricky_store/target.txt`.
 - Các ứng dụng ngân hàng như **BIDV** (`com.vnpay.bidv`) và **MB Bank** (`com.mbmobile`) có cơ chế tự kiểm tra chứng chỉ KeyStore phần cứng. Khi bị Tricky Store can thiệp keybox ảo, app sẽ báo *"Thiết bị bị bẻ khóa"* hoặc lỗi xác thực (`KeyPermanentlyInvalidatedException`).
 - **Cách xử lý:** Nếu sau khi cài AlwaysStrong mà BIDV hoặc MB Bank báo bẻ khóa, bạn chỉ cần mở file `/data/adb/tricky_store/target.txt` và **xóa dòng `com.vnpay.bidv` và `com.mbmobile`** đi.
-- **Lưu ý về Tùy chọn nhà phát triển:** Riêng với MB Bank, máy bắt buộc phải **TẮT Tùy chọn nhà phát triển** và **TẮT Gỡ lỗi USB (ADB)** thì mới vào được.
+- **Về Tùy chọn nhà phát triển (Developer Options) & ADB:** Nhờ đã áp dụng preset `dev_options` trong HMA-OSS, hệ thống sẽ tự động giả lập báo Tùy chọn nhà phát triển và Gỡ lỗi ADB ở trạng thái TẮT cho các app này. Bạn hoàn toàn có thể **bật Developer Options / USB Debugging** trên máy để dùng bình thường mà không bị MB Bank phát hiện!
 
 ### BIDV & MB Bank — Loại trừ TN ToolBox (ROM có tích hợp Keybox)
 
@@ -160,8 +160,7 @@ su -c "settings put global tn_keybox_out \
 | **Build host** | `c5-build-66.bj.xiaomi.com` | `su -c "getprop ro.build.host"` |
 | **Dấu vết Xiaomi.eu** | Không có | `su -c "getprop \| grep -i xiaomi.eu"` |
 | **XiaomiEUExt** | Đã ẩn | `su -c "ls /product/priv-app/XiaomiEUExt"` → báo lỗi |
-| **Tùy chọn nhà phát triển** | Tắt | Cài đặt → Cài đặt bổ sung → Tùy chọn nhà phát triển |
-| **USB Debugging (ADB)** | Tắt | Tắt trong Tùy chọn nhà phát triển |
+| **Tùy chọn nhà phát triển & ADB** | Được HMA ẩn | Tự động ẩn qua preset `dev_options` (không cần tắt trong Cài đặt) |
 
 ---
 
