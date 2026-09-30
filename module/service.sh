@@ -100,11 +100,17 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
         COMPONENT_LIST="$MODDIR/detected_paths.txt"
     fi
 
+    SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
+    [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
+
     if [ -n "$COMPONENT_LIST" ]; then
         while read -r p; do
             [ -z "$p" ] && continue
             if [ -e "$p" ]; then
                 $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
+                if [ -f "$SUS_PATH_FILE" ]; then
+                    grep -Fxq "$p" "$SUS_PATH_FILE" 2>/dev/null || echo "$p" >> "$SUS_PATH_FILE"
+                fi
             fi
         done < "$COMPONENT_LIST"
     else
@@ -113,12 +119,22 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
                  "/product/priv-app/XiaomiEUExt/XiaomiEUExt.apk" \
                  "/product/priv-app/MiuiExtraPhoto" \
                  "/product/priv-app/MiuiExtraPhoto/MiuiExtraPhoto.apk"; do
-            [ -e "$p" ] && $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
+            if [ -e "$p" ]; then
+                $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
+                if [ -f "$SUS_PATH_FILE" ]; then
+                    grep -Fxq "$p" "$SUS_PATH_FILE" 2>/dev/null || echo "$p" >> "$SUS_PATH_FILE"
+                fi
+            fi
         done
     fi
 
     # UID scheme 3 = chi danh cho cac app khong gian nguoi dung co uid >= 10000
     if [ -n "$TARGET_COMPAT_PROP" ]; then
         $SUSFS_BIN add_open_redirect /system/build.prop "$TARGET_COMPAT_PROP" 3 2>/dev/null || true
+        SUS_REDIRECT_FILE="/data/adb/susfs4ksu/sus_open_redirect.txt"
+        if [ -f "$SUS_REDIRECT_FILE" ]; then
+            grep -Fq "/system/build.prop" "$SUS_REDIRECT_FILE" 2>/dev/null || \
+                echo "/system/build.prop $TARGET_COMPAT_PROP 1 3" >> "$SUS_REDIRECT_FILE"
+        fi
     fi
 fi

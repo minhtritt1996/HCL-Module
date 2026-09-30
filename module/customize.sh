@@ -9,9 +9,10 @@ ui_print "************************************************"
 LEGACY_MOD_DIR="/data/adb/modules/xiaomieu_vneid_cloak"
 if [ -d "$LEGACY_MOD_DIR" ]; then
     ui_print "- Phat hien phien ban module tien nhiem (v1.2.x)..."
-    touch "$LEGACY_MOD_DIR/disable" 2>/dev/null || true
-    touch "$LEGACY_MOD_DIR/remove" 2>/dev/null || true
-    ui_print "  -> Da danh dau go bo module cu de tranh xung dot [OK]"
+    # Vo hieu hoa ngay uninstall script de tranh bi go sach sus_path.txt tren lan khoi dong ke tiep
+    rm -f "$LEGACY_MOD_DIR/uninstall.sh" 2>/dev/null || true
+    rm -rf "$LEGACY_MOD_DIR" 2>/dev/null || true
+    ui_print "  -> Da di chuyen va don dep module cu hoan tat [OK]"
 fi
 
 # 1. Nhan dien thiet bi va chuan hoa ma may (Bao toan duoi khu vuc _global/_in...)
