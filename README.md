@@ -9,11 +9,11 @@
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
   <a href="https://github.com/minhtritt1996/HCL-Module/releases/latest">
-    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.6-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
+    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.8-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
   </a>
 </p>
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.6-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.8-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Disclaimer](https://img.shields.io/badge/pháp_lý-Disclaimer-yellow?style=flat-square)](DISCLAIMER.md)
 [![Security](https://img.shields.io/badge/bảo_mật-Security_Boundaries-blueviolet?style=flat-square)](SECURITY.md)

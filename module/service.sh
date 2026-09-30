@@ -140,15 +140,34 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
     SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
     [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
 
-    # Bao ve khoi xung dot Keystore (AlwaysStrong / TrickyStore)
+    # Dong bo va cau hinh tuong thich cho AlwaysStrong / TrickyStore
     if [ -d "/data/adb/tricky_store" ]; then
         touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
-        if [ -f "/data/adb/tricky_store/app_keybox.map" ]; then
-            grep -q "^com\.vnid" /data/adb/tricky_store/app_keybox.map 2>/dev/null || echo -e "com.vnid\toff" >> /data/adb/tricky_store/app_keybox.map
-        else
-            echo -e "com.vnid\toff" > /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
+        
+        # 1. Dam bao com.vnid nam trong target.txt de TrickyStore spoof bootloader locked (tranh loi CA-E006)
+        sed -i '/com\.vnid/d' /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
+        if [ -f "/data/adb/tricky_store/target.txt" ]; then
+            grep -q "^com\.vnid$" /data/adb/tricky_store/target.txt || echo "com.vnid" >> /data/adb/tricky_store/target.txt
         fi
-        [ -f "/data/adb/tricky_store/target.txt" ] && sed -i '/com\.vnid/d' /data/adb/tricky_store/target.txt 2>/dev/null || true
+
+        # 2. Chuan hoa spoof.conf de tranh hook Provider va Signature (nguyen nhan Promon bao CA-E012)
+        cat << "EOF" > /data/adb/tricky_store/spoof.conf
+spoofProvider=0
+spoofSignature=0
+spoofVendingSdk=0
+spoofVendingFinger=1
+spoofBuild=1
+spoofProps=1
+EOF
+
+        # 3. Dong bo vao cac tap tin pif.prop cua module TrickyStore
+        for pif in /data/adb/modules/tricky_store/pif.prop /data/adb/modules/tricky_store/custom.pif.prop /data/adb/tricky_store/pif.prop /data/adb/tricky_store/custom.pif.prop; do
+            if [ -f "$pif" ]; then
+                sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
+                sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
+                sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
+            fi
+        done
     fi
 
     # Don dep bo nho cache ghi nhan vi pham cua Promon Shield RASP neu co
