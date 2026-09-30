@@ -182,6 +182,16 @@ else
     done
 fi
 
+# Quet va cach ly thu muc addon.d (Dac thu co che OTA survival cua AOSP va Custom ROM)
+for addond in "/system/addon.d" "/system/system/addon.d" "/system_ext/addon.d" "/product/addon.d"; do
+    if [ -d "$addond" ] || [ -e "$addond" ]; then
+        ROM_COMPONENT_PATHS="$ROM_COMPONENT_PATHS $addond"
+        for script in "$addond"/*; do
+            [ -e "$script" ] && ROM_COMPONENT_PATHS="$ROM_COMPONENT_PATHS $script"
+        done
+    fi
+done
+
 # Luu danh sach path da quet duoc de service.sh su dung
 rm -f "$MODPATH/compat_isolated_components.txt" "$MODPATH/detected_paths.txt"
 for p in $ROM_COMPONENT_PATHS; do

@@ -30,6 +30,7 @@ if [ -f "/data/adb/susfs4ksu/sus_path.txt" ]; then
     sed -i '/HyperTN/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     sed -i '/TNToolbox/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     sed -i '/Elite/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
+    sed -i '/addon\.d/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
 fi
 
 rm -f /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true

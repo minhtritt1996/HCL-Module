@@ -141,7 +141,7 @@ Lệnh `ksu_susfs add_open_redirect /system/build.prop <target> 3`:
 Các bản ROM tùy biến thường đính kèm các gói APK phụ trợ trong `/product/priv-app/`, `/system_ext/priv-app/` hoặc `/system/priv-app/`:
 1. **Quét động theo hồ sơ môi trường:**
    - **Hồ sơ HyperOS:** Tự động quét và phát hiện các thành phần đặc thù của ROM Xiaomi mod: `XiaomiEUExt`, `XiaomiEUInject`, `HyperTN`, `TNToolbox`, `EliteROM`, `MiPA`...
-   - **Hồ sơ AOSP / LineageOS:** Tự động phát hiện các ứng dụng cập nhật OTA (`lineage.updater`, `crdroid.updater`). Module chủ động **loại trừ các thành phần thiết yếu của hệ điều hành** (như `LineageParts.apk`) để bảo đảm toàn vẹn giao diện Cài đặt và tính năng phần cứng của LineageOS.
+   - **Hồ sơ AOSP / LineageOS:** Tự động phát hiện các ứng dụng cập nhật OTA (`lineage.updater`, `crdroid.updater`), cùng toàn bộ cơ chế lưu vết nâng cấp `/system/addon.d` (`/system/system/addon.d`, `/system_ext/addon.d`, `/product/addon.d`). Module chủ động **loại trừ các thành phần thiết yếu của hệ điều hành** (như `LineageParts.apk`) để bảo đảm toàn vẹn giao diện Cài đặt và tính năng phần cứng của LineageOS.
 2. **Lưu trữ danh sách & Đồng bộ SuSFS:** Ghi nhận các đường dẫn tìm thấy vào `compat_isolated_components.txt` và tự động ghi đè danh sách vĩnh viễn vào `/data/adb/susfs4ksu/sus_path.txt`.
 3. **Cách ly qua SuSFS:** `service.sh` nạp các đường dẫn này vào `ksu_susfs add_sus_path <path>` trên mỗi lần khởi động lại máy.
 4. **Kết quả kỹ thuật:** Lệnh `readdir()` hoặc `stat()` từ không gian ứng dụng người dùng nhận mã lỗi `ENOENT` (File not found), trong khi hệ thống Android vẫn thực thi tiến trình bình thường.

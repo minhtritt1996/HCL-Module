@@ -161,6 +161,24 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
         done
     fi
 
+    # Cach ly addon.d neu ton tai (co che OTA survival dac thu cua AOSP va Custom ROM)
+    for addond in "/system/addon.d" "/system/system/addon.d" "/system_ext/addon.d" "/product/addon.d"; do
+        if [ -d "$addond" ] || [ -e "$addond" ]; then
+            $SUSFS_BIN add_sus_path "$addond" 2>/dev/null || true
+            if [ -f "$SUS_PATH_FILE" ]; then
+                grep -Fxq "$addond" "$SUS_PATH_FILE" 2>/dev/null || echo "$addond" >> "$SUS_PATH_FILE"
+            fi
+            for script in "$addond"/*; do
+                if [ -e "$script" ]; then
+                    $SUSFS_BIN add_sus_path "$script" 2>/dev/null || true
+                    if [ -f "$SUS_PATH_FILE" ]; then
+                        grep -Fxq "$script" "$SUS_PATH_FILE" 2>/dev/null || echo "$script" >> "$SUS_PATH_FILE"
+                    fi
+                fi
+            done
+        fi
+    done
+
     # UID scheme 3 = chi danh cho cac app khong gian nguoi dung co uid >= 10000
     if [ -n "$TARGET_COMPAT_PROP" ]; then
         $SUSFS_BIN add_open_redirect /system/build.prop "$TARGET_COMPAT_PROP" 3 2>/dev/null || true
