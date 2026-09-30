@@ -5,14 +5,11 @@ ui_print "*       HyperOS Compatibility Layer v1.3       *"
 ui_print "*    System Normalization & ROM Environment    *"
 ui_print "************************************************"
 
-# 0. Kiem tra va di chuyen tu module cu (Legacy Module Migration)
+# 0. Ghi nhan module tien nhiem (Legacy Migration)
 LEGACY_MOD_DIR="/data/adb/modules/xiaomieu_vneid_cloak"
 if [ -d "$LEGACY_MOD_DIR" ]; then
-    ui_print "- Phat hien phien ban module tien nhiem (v1.2.x)..."
-    # Vo hieu hoa ngay uninstall script de tranh bi go sach sus_path.txt tren lan khoi dong ke tiep
-    rm -f "$LEGACY_MOD_DIR/uninstall.sh" 2>/dev/null || true
-    rm -rf "$LEGACY_MOD_DIR" 2>/dev/null || true
-    ui_print "  -> Da di chuyen va don dep module cu hoan tat [OK]"
+    ui_print "- Phat hien module tien nhiem; khong tu dong xoa module cu."
+    ui_print "  -> Hay go module cu bang root manager sau khi xac nhan module moi hoat dong."
 fi
 
 # 1. Nhan dien thiet bi va moi truong he dieu hanh (Smart Environment Detection)
@@ -199,69 +196,16 @@ for p in $ROM_COMPONENT_PATHS; do
     ui_print "  + Phat hien thanh phan can cach ly: $p"
 done
 
-# Dong bo vao susfs4ksu neu co
-if [ -d "/data/adb/susfs4ksu" ]; then
-    ui_print "- Dang dong bo quy tac vao susfs4ksu..."
-    SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
-    
-    if [ -f "$MODPATH/compat_isolated_components.txt" ]; then
-        while read -r p; do
-            [ -z "$p" ] && continue
-            if [ -e "$p" ] && ! grep -q "$p" "$SUS_PATH_FILE" 2>/dev/null; then
-                echo "$p" >> "$SUS_PATH_FILE"
-            fi
-        done < "$MODPATH/compat_isolated_components.txt"
-    fi
-
-    cp -f "$MODPATH/compat_build.prop" /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-    chmod 644 /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-    chcon u:object_r:system_file:s0 /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-    # Legacy sync
-    cp -f "$MODPATH/compat_build.prop" /data/adb/susfs4ksu/clean_build.prop 2>/dev/null || true
-
-    SUS_REDIRECT_FILE="/data/adb/susfs4ksu/sus_open_redirect.txt"
-    if [ -f "$SUS_REDIRECT_FILE" ]; then
-        if ! grep -q "compat_build\.prop" "$SUS_REDIRECT_FILE" 2>/dev/null; then
-            echo "/system/build.prop /data/adb/susfs4ksu/compat_build.prop 1 3" >> "$SUS_REDIRECT_FILE"
-        fi
-    fi
+# Ghi danh sach path do module quan ly; service.sh se dang ky khi runtime san sang.
+# Khong sua truc tiep cau hinh chung cua SuSFS tai giai doan cai dat.
+rm -f "$MODPATH/owned_sus_paths.txt" "$MODPATH/owned_open_redirect.txt"
+if [ -f "$MODPATH/compat_isolated_components.txt" ]; then
+    cp -f "$MODPATH/compat_isolated_components.txt" "$MODPATH/owned_sus_paths.txt" 2>/dev/null || true
 fi
 
-# 5. Don dep script cu neu co
+# Xoa artifact legacy do phien ban cu de tranh con sot cau hinh.
 rm -f /data/adb/service.d/hide_custom_rom.sh 2>/dev/null || true
-
-# Dong bo va cau hinh tuong thich cho AlwaysStrong / TrickyStore
-if [ -d "/data/adb/tricky_store" ]; then
-    touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
-    
-    # 1. Dam bao com.vnid nam trong target.txt de TrickyStore spoof bootloader locked (tranh loi CA-E006)
-    sed -i '/com\.vnid/d' /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
-    if [ -f "/data/adb/tricky_store/target.txt" ]; then
-        grep -q "^com\.vnid$" /data/adb/tricky_store/target.txt || echo "com.vnid" >> /data/adb/tricky_store/target.txt
-    fi
-
-    # 2. Chuan hoa spoof.conf de tranh hook Provider va Signature (nguyen nhan Promon bao CA-E012)
-    cat << "EOF" > /data/adb/tricky_store/spoof.conf
-spoofProvider=0
-spoofSignature=0
-spoofVendingSdk=0
-spoofVendingFinger=1
-spoofBuild=1
-spoofProps=1
-EOF
-
-    # 3. Dong bo vao cac tap tin pif.prop cua module TrickyStore
-    for pif in /data/adb/modules/tricky_store/pif.prop /data/adb/modules/tricky_store/custom.pif.prop /data/adb/tricky_store/pif.prop /data/adb/tricky_store/custom.pif.prop; do
-        if [ -f "$pif" ]; then
-            sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
-        fi
-    done
-fi
-
-# Don dep bo nho cache ghi nhan vi pham cua Promon Shield RASP neu co
-rm -f /data/data/com.vnid/files/xwoccmwldwasxm.dat /data/data/com.vnid/files/cmwoawp.ogg 2>/dev/null || true
+rm -f "$MODPATH/detected_paths.txt" 2>/dev/null || true
 
 # Phan quyen thuc thi (khong dung post-fs-data de an toan tuyet doi cho modem)
 set_perm "$MODPATH/service.sh" 0 0 0755
