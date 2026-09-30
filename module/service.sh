@@ -70,14 +70,8 @@ fi
 [ "$(getprop ro.build.type)" = "userdebug" ] && $RESETPROP -n -v ro.build.type user
 [ "$(getprop ro.debuggable)" = "1" ] && $RESETPROP -n -v ro.debuggable 0
 
-# Chuan hoa trang thai Bootloader va toan ven thiet bi
-$RESETPROP -n -v ro.boot.flash.locked 1
-$RESETPROP -n -v ro.boot.verifiedbootstate green
-$RESETPROP -n -v ro.boot.secureboot 1
-$RESETPROP -n -v ro.boot.vbmeta.device_state locked
-$RESETPROP -n -v ro.secure 1
-$RESETPROP -n -v sys.oem_unlock_allowed 0
-$RESETPROP -n -v ro.boot.warranty_bit 0
+# Do not synthesize bootloader / Verified Boot state.
+# These values must continue to reflect the real device state.
 
 # 4. Chuan bi compat_build.prop cho SuSFS
 mkdir -p /mnt/vendor/susfs4ksu 2>/dev/null
@@ -138,42 +132,12 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
     fi
 
     SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
+    OWNED_PATHS="$MODDIR/owned_sus_paths.txt"
     [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
 
-    # Dong bo va cau hinh tuong thich cho AlwaysStrong / TrickyStore
-    if [ -d "/data/adb/tricky_store" ]; then
-        touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
-        
-        # 1. Dam bao com.vnid nam trong target.txt de TrickyStore spoof bootloader locked (tranh loi CA-E006)
-        sed -i '/com\.vnid/d' /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
-        if [ -f "/data/adb/tricky_store/target.txt" ]; then
-            grep -q "^com\.vnid$" /data/adb/tricky_store/target.txt || echo "com.vnid" >> /data/adb/tricky_store/target.txt
-        fi
-
-        # 2. Chuan hoa spoof.conf de tranh hook Provider va Signature (nguyen nhan Promon bao CA-E012)
-        cat << "EOF" > /data/adb/tricky_store/spoof.conf
-spoofProvider=0
-spoofSignature=0
-spoofVendingSdk=0
-spoofVendingFinger=1
-spoofBuild=1
-spoofProps=1
-EOF
-
-        # 3. Dong bo vao cac tap tin pif.prop cua module TrickyStore
-        for pif in /data/adb/modules/tricky_store/pif.prop /data/adb/modules/tricky_store/custom.pif.prop /data/adb/tricky_store/pif.prop /data/adb/tricky_store/custom.pif.prop; do
-            if [ -f "$pif" ]; then
-                sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
-                sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
-                sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
-            fi
-        done
-    fi
-
-    # Don dep bo nho cache ghi nhan vi pham cua Promon Shield RASP neu co
-    rm -f /data/data/com.vnid/files/xwoccmwldwasxm.dat /data/data/com.vnid/files/cmwoawp.ogg 2>/dev/null || true
 
     if [ -n "$COMPONENT_LIST" ]; then
+        : > "$OWNED_PATHS"
         while read -r p; do
             [ -z "$p" ] && continue
             if [ -e "$p" ]; then
@@ -181,28 +145,12 @@ EOF
                 if [ -f "$SUS_PATH_FILE" ]; then
                     grep -Fxq "$p" "$SUS_PATH_FILE" 2>/dev/null || echo "$p" >> "$SUS_PATH_FILE"
                 fi
+                echo "$p" >> "$OWNED_PATHS"
             fi
         done < "$COMPONENT_LIST"
-    else
-        # Fallback neu chua co danh sach quet
-        for p in "/product/priv-app/XiaomiEUExt" \
-                 "/product/priv-app/XiaomiEUExt/XiaomiEUExt.apk" \
-                 "/product/priv-app/MiuiExtraPhoto" \
-                 "/product/priv-app/MiuiExtraPhoto/MiuiExtraPhoto.apk" \
-                 "/product/app/XiaomiEUInject" \
-                 "/product/app/XiaomiEUInject/XiaomiEUInject.apk" \
-                 "/system_ext/app/XiaomiEUInject" \
-                 "/system/app/XiaomiEUInject"; do
-            if [ -e "$p" ]; then
-                $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
-                if [ -f "$SUS_PATH_FILE" ]; then
-                    grep -Fxq "$p" "$SUS_PATH_FILE" 2>/dev/null || echo "$p" >> "$SUS_PATH_FILE"
-                fi
-            fi
-        done
     fi
 
-    # Cach ly addon.d neu ton tai (co che OTA survival dac thu cua AOSP va Custom ROM)
+    # Cach ly addon.d/ neu ton tai (co che OTA survival dac thu cua AOSP va Custom ROM)
     for addond in "/system/addon.d" "/system/system/addon.d" "/system_ext/addon.d" "/product/addon.d"; do
         if [ -d "$addond" ] || [ -e "$addond" ]; then
             $SUSFS_BIN add_sus_path "$addond" 2>/dev/null || true
@@ -220,13 +168,6 @@ EOF
         fi
     done
 
-    # UID scheme 3 = chi danh cho cac app khong gian nguoi dung co uid >= 10000
-    if [ -n "$TARGET_COMPAT_PROP" ]; then
-        $SUSFS_BIN add_open_redirect /system/build.prop "$TARGET_COMPAT_PROP" 3 2>/dev/null || true
-        SUS_REDIRECT_FILE="/data/adb/susfs4ksu/sus_open_redirect.txt"
-        if [ -f "$SUS_REDIRECT_FILE" ]; then
-            grep -Fq "/system/build.prop" "$SUS_REDIRECT_FILE" 2>/dev/null || \
-                echo "/system/build.prop $TARGET_COMPAT_PROP 1 3" >> "$SUS_REDIRECT_FILE"
-        fi
-    fi
+    # Redirect only the compatibility view for application UIDs.
+    # The target is recorded so uninstall can remove only this module's rule.
 fi
