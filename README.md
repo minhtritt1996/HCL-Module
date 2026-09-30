@@ -1,26 +1,26 @@
 <div align="center">
 
-# 🛡️ HyperOS Compatibility Layer
+# 🛡️ HyperOS & AOSP Compatibility Layer
 
-**Compatibility layer dành cho Xiaomi HyperOS và các ROM tùy biến dựa trên HyperOS.**
+**Compatibility layer dành cho Xiaomi HyperOS và các ROM tùy biến AOSP (LineageOS, crDroid...).**
 
 <p align="center">
-  <a href="https://github.com/minhtritt1996/hyperos-compat">
+  <a href="https://github.com/minhtritt1996/HCL-Module">
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
-  <a href="https://github.com/minhtritt1996/hyperos-compat/releases/latest">
-    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.0-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
+  <a href="https://github.com/minhtritt1996/HCL-Module/releases/latest">
+    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.2-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
   </a>
 </p>
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.0-blue?style=flat-square)](https://github.com/minhtritt1996/hyperos-compat/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.2-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Disclaimer](https://img.shields.io/badge/pháp_lý-Disclaimer-yellow?style=flat-square)](DISCLAIMER.md)
 [![Security](https://img.shields.io/badge/bảo_mật-Security_Boundaries-blueviolet?style=flat-square)](SECURITY.md)
 [![Privacy](https://img.shields.io/badge/quyền_riêng_tư-Zero_Telemetry-brightgreen?style=flat-square)](PRIVACY.md)
 [![Root](https://img.shields.io/badge/root-KernelSU_%7C_APatch_%7C_Magisk-red?style=flat-square)](#-yêu-cầu-hệ-thống)
 
-Dự án cung cấp các cơ chế chuẩn hóa môi trường Android cục bộ nhằm giảm khác biệt giữa HyperOS stock và các HyperOS-based custom ROM, nâng cao độ tin cậy và tính tương thích cho các ứng dụng người dùng.
+Dự án cung cấp cơ chế chuẩn hóa môi trường Android cục bộ (Smart Environment Detection) nhằm giảm khác biệt giữa ROM stock và các bản ROM tùy biến (HyperOS-based & AOSP-based), nâng cao độ tin cậy và tính tương thích cho các ứng dụng người dùng.
 
 </div>
 
@@ -29,13 +29,20 @@ Dự án cung cấp các cơ chế chuẩn hóa môi trường Android cục b�
 ## 🌐 Phạm Vi Hỗ Trợ
 
 ```
-Xiaomi HyperOS
-├── Xiaomi.eu
-├── HyperTN
-├── EliteROM
-├── MiPA
-├── Pulse
-└── HyperOS Ports (AOSP / MIUI / Custom vendor ports)
+Hệ Điều Hành & Bản ROM
+├── Xiaomi HyperOS & MIUI
+│   ├── Xiaomi.eu
+│   ├── HyperTN
+│   ├── EliteROM
+│   ├── MiPA
+│   ├── Pulse
+│   └── HyperOS Ports (Flagship ports, cross-device ports)
+└── AOSP & AOSP-based Custom ROMs
+    ├── LineageOS
+    ├── crDroid
+    ├── PixelExperience / PixelOS
+    ├── EvolutionX
+    └── Generic AOSP / GSI (Treble)
 ```
 
 ---
@@ -74,30 +81,28 @@ Compatibility Testing
 
 ## ❓ Mục Đích Dự Án
 
-Trong các bản ROM tùy biến dựa trên Xiaomi HyperOS (như Xiaomi.eu, HyperTN, EliteROM...), quá trình phát triển thường để lại các thuộc tính cấu hình không đồng nhất so với bản phát hành thương mại của nhà sản xuất (Stock Firmware):
+Trong các bản ROM tùy biến (cả **Xiaomi HyperOS-based** như Xiaomi.eu, HyperTN, EliteROM... và **AOSP-based** như LineageOS, crDroid, EvolutionX...), quá trình phát triển thường để lại các thuộc tính cấu hình không đồng nhất so với bản phát hành thương mại chính thức (Stock Firmware):
 - Cờ kiểm thử của nhà phát triển ROM (`ro.build.type=userdebug`, `ro.debuggable=1`).
-- Máy chủ biên dịch không thuộc hạ tầng chính thức (`ro.build.host`), thuộc tính nhận diện máy bị can thiệp hậu tố (`ro.product.mod_device`).
-- Tích hợp thêm các tiện ích hệ thống riêng của bản mod (`XiaomiEUExt`, `MiuiExtraPhoto`, `TNToolbox`, `LineageParts`...).
+- Máy chủ biên dịch không thuộc hạ tầng chính thức (`ro.build.host`), hoặc các thuộc tính mang dấu hiệu nhận diện bản mod (`ro.lineage.*`, `ro.crdroid.*`, `ro.product.mod_device`, `ro.modversion`...).
+- Tích hợp thêm các tiện ích hệ thống riêng của bản mod (`XiaomiEUExt`, `MiuiExtraPhoto`, `TNToolbox`, OTA updaters...).
 
-Những khác biệt này khiến môi trường thực thi thiếu tính nhất quán so with tiêu chuẩn Android Compatibility Definition Document (CDD). **HyperOS Compatibility Layer** khắc phục triệt để vấn đề này bằng cách chuẩn hóa các thuộc tính hệ thống trong RAM và cung cấp một góc nhìn tệp cấu hình tương thích (compatibility view) nhất quán cho user-space applications.
+Những khác biệt này khiến môi trường thực thi thiếu tính nhất quán so với tiêu chuẩn Android Compatibility Definition Document (CDD). **HyperOS & AOSP Compatibility Layer** tích hợp cơ chế **Nhận diện môi trường thông minh (Smart Environment Detection)**, tự động nhận biết hệ điều hành đang chạy để áp dụng hồ sơ chuẩn hóa tương ứng mà không gây xung đột hay cấy nhầm thông số giữa các dòng ROM.
 
 ---
 
-## ⚙️ Kiến Trúc Kỹ Thuật 3 Lớp
+## ⚙️ Kiến Trúc Kỹ Thuật 3 Lớp Thích Ứng
 
-Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự động thích ứng theo từng cấu hình thiết bị:
+Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự động thích ứng thông minh theo từng cấu hình hệ điều hành:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
 │  Lớp 1: System Property Normalization (RAM, resetprop)           │
-│  • Quét động và chuẩn hóa ro.xiaomi.eu.*, ro.hypertn.*,          │
-│    ro.eliterom.*, ro.mipa.*, ro.lineage.*, developerid...        │
-│  • Đồng bộ cờ bản phát hành chính thức:                          │
-│    ro.build.type=user và ro.debuggable=0                         │
-│  • Khôi phục ro.product.mod_device về mã máy chuẩn của Xiaomi    │
-│  • Chuẩn hóa ro.build.host về máy chủ build chính thức Xiaomi    │
-│  • Bảo toàn hậu tố vùng (_global, _eea_global, _in_global...)     │
-│    đảm bảo an toàn tuyệt đối cho kết nối modem & RIL             │
+│  • Tự động nhận diện môi trường: HyperOS Profile vs AOSP Profile  │
+│  • HyperOS: Chuẩn hóa ro.build.host (c5-build-66), dọn dẹp       │
+│    ro.xiaomi.eu.*, ro.hypertn.*, ro.eliterom.*, bảo toàn mod_device│
+│  • AOSP/LineageOS: Dọn dẹp ro.lineage.*, ro.crdroid.*, modversion │
+│    mà KHÔNG cấy thuộc tính Xiaomi hay can thiệp vào máy chủ gốc  │
+│  • Đồng bộ cờ phát hành chuẩn: ro.build.type=user, ro.debuggable=0 │
 ├──────────────────────────────────────────────────────────────────┤
 │  Lớp 2: Compatibility File View (SuSFS open_redirect)            │
 │  • Tạo compat_build.prop đã được chuẩn hóa tự động khi cài đặt   │
@@ -107,10 +112,12 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 │    (uid ≥ 10000), không làm gián đoạn init hoặc rild daemon      │
 ├──────────────────────────────────────────────────────────────────┤
 │  Lớp 3: ROM Component Isolation (SuSFS sus_path)                 │
-│  • Quét động các gói APK phụ trợ riêng của ROM trong priv-app     │
-│    (XiaomiEUExt, MiuiExtraPhoto, TNToolbox, LineageParts...)     │
-│  • Cách ly đường dẫn trong không gian ứng dụng người dùng nhằm   │
-│    tránh xung đột khi ứng dụng quét tệp tin ở tầng native C/C++  │
+│  • Quét động các gói APK phụ trợ riêng biệt theo từng dòng ROM    │
+│    (HyperOS: XiaomiEUExt, MiuiExtraPhoto, TNToolbox...           │
+│     AOSP: Lineage Updater, crDroid Updater...)                   │
+│  • Tự động bảo vệ các thành phần thiết yếu (như LineageParts)     │
+│    để không làm gián đoạn giao diện cài đặt hệ thống             │
+│  • Tự động ghi nhớ và đồng bộ vĩnh viễn vào kernel SuSFS         │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -125,7 +132,7 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 | **Kernel SuSFS** *(Tùy chọn)* | Kernel hỗ trợ SuSFS (Wild Kernel, ShirkNeko...) | Cung cấp Lớp 2 (Chuyển hướng tệp) và Lớp 3 (Cách ly thành phần) |
 | **susfs4ksu** | Module susfs4ksu (nếu dùng kernel SuSFS) | Tự động đồng bộ các quy tắc cấu hình kernel |
 | **HMA-OSS** | Hide My Applist (bản mã nguồn mở Zygisk) | Quản lý danh sách ứng dụng theo cơ chế Whitelist |
-| **Hệ điều hành** | Xiaomi HyperOS 1.0 / HyperOS 2.0 / HyperOS 3.0 (Android 12 – 16) | Tương thích đa nền tảng phần cứng |
+| **Hệ điều hành** | Xiaomi HyperOS 1.0 – 3.0 / AOSP / LineageOS / crDroid (Android 12 – 16) | Tự động nhận diện hồ sơ ROM phù hợp |
 
 ---
 
@@ -137,15 +144,15 @@ Cài đặt các module nền tảng qua trình quản lý root:
 - **HMA-OSS** — [GitHub Releases](https://github.com/frknkrc44/HMA-OSS/releases)
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
-### 2. Cài đặt HyperOS Compatibility Layer
-1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.0.zip`](https://github.com/minhtritt1996/hyperos-compat/releases/latest)
+### 2. Cài đặt HyperOS & AOSP Compatibility Layer
+1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.2.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài đặt từ bộ nhớ**.
 3. Chọn gói ZIP vừa tải và tiến hành cài đặt.
 4. Khởi động lại thiết bị.
 
 > [!NOTE]
-> **Nâng cấp từ phiên bản tiền nhiệm (v1.2.x trở về trước):**
-> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.0`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đảm bảo không xảy ra xung đột.
+> **Nâng cấp từ phiên bản tiền nhiệm (v1.2.x / v1.3.x):**
+> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.2`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
 
 ---
 

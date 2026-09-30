@@ -16,39 +16,59 @@ elif [ -f "/data/adb/magisk/magisk" ]; then
     RESETPROP="/data/adb/magisk/magisk --resetprop"
 fi
 
-# 2. Xac dinh thiet bi va chuan hoa ma may sach se
+# 2. Xac dinh thiet bi va moi truong he dieu hanh (HyperOS vs AOSP)
+ROM_ENV="aosp"
+if [ -f "$MODDIR/rom_env.txt" ]; then
+    ROM_ENV=$(cat "$MODDIR/rom_env.txt" | tr -d ' \r\n')
+elif [ -n "$(getprop ro.miui.ui.version.name)" ] || \
+     [ -n "$(getprop ro.miui.version.code_time)" ] || \
+     [ -n "$(getprop ro.miui.ui.version.code)" ] || \
+     [ -f "/system/framework/framework-ext-res.apk" ] || \
+     [ -d "/system/priv-app/miui" ] || \
+     [ -d "/system/priv-app/MiuiHome" ]; then
+    ROM_ENV="hyperos"
+fi
+
 HYPEROS_DEVICE=$(getprop ro.product.device)
 [ -z "$HYPEROS_DEVICE" ] && HYPEROS_DEVICE=$(getprop ro.product.name)
 [ -z "$HYPEROS_DEVICE" ] && HYPEROS_DEVICE=$(getprop ro.build.product)
 
-HYPEROS_RAW_MOD_DEVICE=$(getprop ro.product.mod_device)
-if echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_in_global"; then
-    HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_in_global"
-elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_ru_global"; then
-    HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_ru_global"
-elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_eea_global"; then
-    HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_eea_global"
-elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_global"; then
-    HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_global"
-elif [ -n "$HYPEROS_RAW_MOD_DEVICE" ]; then
-    HYPEROS_NORM_MOD_DEVICE=$(echo "$HYPEROS_RAW_MOD_DEVICE" | sed -E 's/_(xiaomieu|eu|hypertn|tn|elite|eliterom|mipa|pulse|mod|custom)//Ig')
-    [ -z "$HYPEROS_NORM_MOD_DEVICE" ] && HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+# 3. Chuan hoa properties trong bo nho RAM
+if [ "$ROM_ENV" = "hyperos" ]; then
+    HYPEROS_RAW_MOD_DEVICE=$(getprop ro.product.mod_device)
+    if echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_in_global"; then
+        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_in_global"
+    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_ru_global"; then
+        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_ru_global"
+    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_eea_global"; then
+        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_eea_global"
+    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_global"; then
+        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_global"
+    elif [ -n "$HYPEROS_RAW_MOD_DEVICE" ]; then
+        HYPEROS_NORM_MOD_DEVICE=$(echo "$HYPEROS_RAW_MOD_DEVICE" | sed -E 's/_(xiaomieu|eu|hypertn|tn|elite|eliterom|mipa|pulse|mod|custom)//Ig')
+        [ -z "$HYPEROS_NORM_MOD_DEVICE" ] && HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+    else
+        HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+    fi
+
+    # Chuan hoa may chu build goc Xiaomi va mod_device cua Xiaomi
+    $RESETPROP -n -v ro.build.host c5-build-66.bj.xiaomi.com
+    [ -n "$HYPEROS_NORM_MOD_DEVICE" ] && $RESETPROP -n -v ro.product.mod_device "$HYPEROS_NORM_MOD_DEVICE"
+
+    # Quet dong va loai bo thuoc tinh chu ky ROM mod Xiaomi
+    for prop in $(getprop | grep -iE 'xiaomi\.eu|developerid|hypertn|eliterom|mipa|pulse' | sed -E 's/^\[([^]]+)\].*/\1/'); do
+        [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
+    done
 else
-    HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+    # AOSP Profile: Loai bo cac property rò rỉ của ROM AOSP tuy bien ma khong chen thuoc tinh Xiaomi
+    for prop in $(getprop | grep -iE 'lineage\.(build|version|device|display)|crdroid|evolution|pixelexperience|havoc|derp|modversion' | sed -E 's/^\[([^]]+)\].*/\1/'); do
+        [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
+    done
 fi
 
-# 3. Chuan hoa properties trong bo nho RAM
-$RESETPROP -n -v ro.build.host c5-build-66.bj.xiaomi.com
-[ -n "$HYPEROS_NORM_MOD_DEVICE" ] && $RESETPROP -n -v ro.product.mod_device "$HYPEROS_NORM_MOD_DEVICE"
-
-# Xu ly rom userdebug / debuggable neu co
+# Xu ly rom userdebug / debuggable chung cho moi loai ROM
 [ "$(getprop ro.build.type)" = "userdebug" ] && $RESETPROP -n -v ro.build.type user
 [ "$(getprop ro.debuggable)" = "1" ] && $RESETPROP -n -v ro.debuggable 0
-
-# Quet dong va loai bo toan bo cac property chua chu ky ROM mod
-for prop in $(getprop | grep -iE 'xiaomi\.eu|developerid|hypertn|eliterom|mipa|pulse|lineage|modversion' | sed -E 's/^\[([^]]+)\].*/\1/'); do
-    [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
-done
 
 # 4. Chuan bi compat_build.prop cho SuSFS
 mkdir -p /mnt/vendor/susfs4ksu 2>/dev/null

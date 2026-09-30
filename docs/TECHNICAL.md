@@ -52,10 +52,11 @@ Dự án được cấu trúc theo mô hình **3 lớp tương thích độc l�
 
 ---
 
-## 2. Khác Biệt Môi Trường Trên Custom HyperOS (HyperOS Environment Differences)
+## 2. Khác Biệt Môi Trường Trên Custom ROM (HyperOS & AOSP Differences)
 
-Trong các bản ROM tùy biến dựa trên Xiaomi HyperOS (Xiaomi.eu, HyperTN, EliteROM, MiPA, Pulse...), các nhà phát triển ROM thường điều chỉnh nhiều thuộc tính hệ thống vì lý do kỹ thuật. Dưới đây là phân tích chi tiết:
+Trong các bản ROM tùy biến, các nhà phát triển thường điều chỉnh nhiều thuộc tính hệ thống vì lý do kỹ thuật. Dưới đây là phân tích chi tiết theo hai nhánh môi trường chính:
 
+### Nhánh 1: Custom HyperOS (Xiaomi.eu, HyperTN, EliteROM, MiPA, Pulse...)
 | Thuộc tính | Giá trị trên Stock Firmware | Giá trị trên Custom HyperOS | Nguyên nhân kỹ thuật phát sinh khác biệt |
 |---|---|---|---|
 | `ro.build.type` | `user` | Thường bị đổi thành `userdebug` | Giúp dev bật adb root, xem log chi tiết khi port ROM. |
@@ -65,20 +66,47 @@ Trong các bản ROM tùy biến dựa trên Xiaomi HyperOS (Xiaomi.eu, HyperTN,
 | `ro.xiaomi.developerid` | Không tồn tại | Định danh của dev biên dịch | Chữ ký định danh cá nhân của lập trình viên ROM. |
 | `ro.xiaomi.eu.*` | Không tồn tại | Các cờ tính năng bổ trợ của Xiaomi.eu | Kích hoạt bản dịch đa ngôn ngữ và các bản vá nội bộ. |
 
-Những sai lệch này vi phạm định nghĩa môi trường phát hành chuẩn (AOSP Production Baseline), khiến các ứng dụng kiểm tra tính toàn vẹn đưa ra cảnh báo môi trường không an toàn.
+### Nhánh 2: Custom AOSP (LineageOS, crDroid, PixelExperience, EvolutionX...)
+| Thuộc tính | Giá trị trên AOSP Stock | Giá trị trên Custom AOSP | Nguyên nhân kỹ thuật phát sinh khác biệt |
+|---|---|---|---|
+| `ro.build.type` | `user` | Thường mặc định `userdebug` | Cho phép developer truy cập root qua ADB debugging. |
+| `ro.debuggable` | `0` | Thường mặc định `1` | Cho phép debuggable ART runtime và attach profiler. |
+| `ro.lineage.*` | Không tồn tại | `ro.lineage.version`, `ro.lineage.device`... | Nhận diện phiên bản LineageOS và hỗ trợ Lineage Settings. |
+| `ro.crdroid.*` | Không tồn tại | `ro.crdroid.version`, `ro.crdroid.build.version` | Khai báo bản phát hành của cộng đồng crDroid. |
+| `ro.modversion` | Không tồn tại | Tên và số phiên bản của bản ROM tùy biến | Thuộc tính legacy được nhiều ứng dụng bảo mật dùng làm cờ phát hiện ROM. |
 
 ---
 
-## 3. Chuẩn Hóa Thuộc Tính Hệ Thống (Property Normalization)
+## 3. Nhận Diện Môi Trường Thông Minh & Chuẩn Hóa Thuộc Tính (Smart Environment Detection & Normalization)
 
-Lớp 1 thực thi trong script `service.sh` sau khi thiết bị khởi động hoàn tất:
-1. **Duyệt động cây thuộc tính:** Quét toàn bộ thuộc tính trong bộ nhớ RAM qua `getprop`.
-2. **Loại bỏ thuộc tính dư thừa:** Tự động loại bỏ các thuộc tính mang chữ ký của ROM tùy biến (`ro.xiaomi.developerid`, `ro.xiaomi.eu.*`, `ro.hypertn.*`, `ro.eliterom.*`, `ro.mipa.*`, `ro.lineage.*`).
-3. **Đồng bộ hóa cờ sản xuất:**
+Để đảm bảo an toàn tuyệt đối và tính tự nhiên của môi trường, module áp dụng cơ chế **Smart Environment Detection** trong cả `customize.sh` và `service.sh`:
+
+```sh
+# Tự động nhận diện nhánh ROM
+if [ -n "$(getprop ro.miui.ui.version.name)" ] || [ -f "/system/framework/framework-ext-res.apk" ]; then
+    ROM_ENV="hyperos"
+else
+    ROM_ENV="aosp"
+fi
+```
+
+### Hồ Sơ 1: HyperOS Profile
+Khi hoạt động trên môi trường Xiaomi HyperOS / MIUI:
+1. **Chuẩn hóa hạ tầng Xiaomi:** Khôi phục `ro.build.host` về máy chủ chính thức của Xiaomi (`c5-build-66.bj.xiaomi.com`).
+2. **Chuẩn hóa mã máy Xiaomi:** Khôi phục `ro.product.mod_device` về mã thương mại gốc (ví dụ: `mondrian_global`), giữ nguyên hậu tố phân vùng mạng (`_global`, `_eea_global`, `_in_global`) để bảo vệ kết nối radio/modem.
+3. **Làm sạch thuộc tính mod:** Tự động loại bỏ các thuộc tính chứa chữ ký: `ro.xiaomi.eu.*`, `ro.hypertn.*`, `ro.eliterom.*`, `ro.mipa.*`, `ro.pulse.*`, `developerid`.
+
+### Hồ Sơ 2: AOSP Profile
+Khi hoạt động trên môi trường AOSP thuần, LineageOS hoặc crDroid:
+1. **Bảo toàn thiết bị gốc:** Tuyệt đối **KHÔNG** cấy `ro.product.mod_device` hay thay đổi `ro.build.host` thành server Xiaomi, tránh tạo ra dị thường cấu hình (anomalous build machine).
+2. **Làm sạch thuộc tính rò rỉ:** Tự động xóa các thuộc tính đặc thù qua `resetprop -d`:
+   - `ro.lineage.version`, `ro.lineage.build.version`, `ro.lineage.device`, `ro.lineage.display.version`
+   - `ro.crdroid.version`, `ro.crdroid.build.version`, `ro.crdroid.device`
+   - `ro.evolution.*`, `ro.pixelexperience.*`, `ro.havoc.*`, `ro.derp.*`
+   - `ro.modversion`
+3. **Đồng bộ cờ sản xuất (Chung cho mọi môi trường):**
    - Đưa `ro.build.type` về `user`.
    - Đưa `ro.debuggable` về `0`.
-   - Khôi phục `ro.build.host` về máy chủ chính thức của Xiaomi (`c5-build-66.bj.xiaomi.com`).
-4. **Bảo toàn phân vùng mạng:** Giữ nguyên hậu tố vùng nhà mạng (`_global`, `_eea_global`, `_in_global`) trong `ro.product.mod_device` nhằm đảm bảo tính toàn vẹn của kết nối vô tuyến.
 
 ---
 
@@ -87,10 +115,10 @@ Lớp 1 thực thi trong script `service.sh` sau khi thiết bị khởi động
 Nhiều thư viện native (C/C++) không gọi API Java `SystemProperties.get()` mà mở trực tiếp tệp `/system/build.prop` bằng lời gọi hệ thống `open()`.
 
 Để xử lý trường hợp này:
-1. Trong quá trình cài đặt (`customize.sh`), module tạo ra tệp `compat_build.prop` đã được chuẩn hóa dựa trên chính tệp `build.prop` của thiết bị.
+1. Trong quá trình cài đặt (`customize.sh`), module tự động tạo ra tệp `compat_build.prop` thích ứng riêng theo môi trường đã nhận diện:
+   - **Trên HyperOS:** Lọc bỏ cờ ROM Xiaomi.eu/HyperTN, chuẩn hóa host và mod_device;
+   - **Trên AOSP:** Lọc bỏ các dòng `ro.lineage.*`, `ro.crdroid.*`, `ro.modversion`, chuẩn hóa `ro.build.type=user`, `ro.debuggable=0` mà không thêm các trường lạ của Xiaomi.
 2. Quá trình lọc sử dụng lệnh `sed` tương thích chuẩn POSIX/Toybox:
-   - Loại bỏ các dòng chứa định danh ROM mod;
-   - Thay thế máy chủ build và cờ debug;
    - Ghi kết quả vào `$MODPATH/compat_build.prop`.
 3. Tệp này được cấp quyền đọc `0644` và gán nhãn SELinux `u:object_r:system_file:s0`.
 
@@ -110,10 +138,12 @@ Lệnh `ksu_susfs add_open_redirect /system/build.prop <target> 3`:
 
 ## 6. Cách Ly Thành Phần Phụ Trợ Của ROM (ROM Component Isolation)
 
-Các bản ROM tùy biến thường đính kèm các gói APK phụ trợ trong `/product/priv-app/` hoặc `/system_ext/priv-app/` (ví dụ: `XiaomiEUExt`, `MiuiExtraPhoto`, `TNToolbox`):
-1. **Quét động khi cài đặt:** `customize.sh` tự động quét tìm các thư mục hoặc gói APK mang tên đặc thù của ROM mod.
-2. **Lưu trữ danh sách:** Ghi nhận các đường dẫn tìm thấy vào `compat_isolated_components.txt`.
-3. **Cách ly qua SuSFS:** `service.sh` nạp các đường dẫn này vào `ksu_susfs add_sus_path <path>`.
+Các bản ROM tùy biến thường đính kèm các gói APK phụ trợ trong `/product/priv-app/`, `/system_ext/priv-app/` hoặc `/system/priv-app/`:
+1. **Quét động theo hồ sơ môi trường:**
+   - **Hồ sơ HyperOS:** Tự động quét và phát hiện các thành phần đặc thù của ROM Xiaomi mod: `XiaomiEUExt`, `MiuiExtraPhoto`, `HyperTN`, `TNToolbox`, `EliteROM`, `MiPA`...
+   - **Hồ sơ AOSP / LineageOS:** Tự động phát hiện các ứng dụng cập nhật OTA (`lineage.updater`, `crdroid.updater`). Module chủ động **loại trừ các thành phần thiết yếu của hệ điều hành** (như `LineageParts.apk`) để bảo đảm toàn vẹn giao diện Cài đặt và tính năng phần cứng của LineageOS.
+2. **Lưu trữ danh sách & Đồng bộ SuSFS:** Ghi nhận các đường dẫn tìm thấy vào `compat_isolated_components.txt` và tự động ghi đè danh sách vĩnh viễn vào `/data/adb/susfs4ksu/sus_path.txt`.
+3. **Cách ly qua SuSFS:** `service.sh` nạp các đường dẫn này vào `ksu_susfs add_sus_path <path>` trên mỗi lần khởi động lại máy.
 4. **Kết quả kỹ thuật:** Lệnh `readdir()` hoặc `stat()` từ không gian ứng dụng người dùng nhận mã lỗi `ENOENT` (File not found), trong khi hệ thống Android vẫn thực thi tiến trình bình thường.
 
 ---
@@ -203,11 +233,16 @@ su -c "ksu_susfs show sus_path"
 
 ## 12. Ma Trận Tương Thích (Compatibility Matrix)
 
-| Biến thể HyperOS | Phiên bản Android | Trạng thái chuẩn hóa thuộc tính | Trạng thái SuSFS Kernel | Đánh giá vận hành |
+| Biến thể ROM / Hệ Điều Hành | Phiên bản Android | Hồ Sơ Chuẩn Hóa | Trạng Thái SuSFS Kernel | Đánh Giá Vận Hành |
 |---|---|---|---|---|
-| **Xiaomi.eu HyperOS 1.0** | Android 14 | Hoàn toàn tương thích | Tương thích (nếu kernel có SuSFS) | Ổn định |
-| **Xiaomi.eu HyperOS 2.0** | Android 15 | Hoàn toàn tương thích | Tương thích (nếu kernel có SuSFS) | Ổn định |
-| **Xiaomi.eu HyperOS 3.0** | Android 15 / 16 | Hoàn toàn tương thích | Tương thích (Wild Kernel / ShirkNeko) | Đã thử nghiệm thực tế (POCO F5 Pro) |
-| **HyperTN / TN ToolBox** | Android 14 / 15 | Tự động làm sạch tag TN | Tương thích | Ổn định |
-| **EliteROM / MiPA / Pulse** | Android 14 / 15 | Tự động làm sạch prop mod | Tương thích | Ổn định |
-| **HyperOS Flagship Ports** | Android 14 / 15 | Bảo toàn modem device | Tương thích | Ổn định |
+| **Xiaomi.eu HyperOS 1.0** | Android 14 | HyperOS Profile | Tương thích (nếu kernel có SuSFS) | Ổn định |
+| **Xiaomi.eu HyperOS 2.0** | Android 15 | HyperOS Profile | Tương thích (nếu kernel có SuSFS) | Ổn định |
+| **Xiaomi.eu HyperOS 3.0** | Android 15 / 16 | HyperOS Profile | Tương thích (Wild Kernel / ShirkNeko) | Đã thử nghiệm thực tế (POCO F5 Pro) |
+| **HyperTN / TN ToolBox** | Android 14 / 15 | HyperOS Profile | Tương thích | Ổn định |
+| **EliteROM / MiPA / Pulse** | Android 14 / 15 | HyperOS Profile | Tương thích | Ổn định |
+| **HyperOS Flagship Ports** | Android 14 / 15 | HyperOS Profile | Tương thích | Ổn định |
+| **LineageOS (Official / Unofficial)** | Android 13 – 16 | AOSP Profile | Tương thích (Bảo vệ LineageParts) | Ổn định |
+| **crDroid Android** | Android 13 – 16 | AOSP Profile | Tương thích | Ổn định |
+| **PixelExperience / PixelOS** | Android 13 – 15 | AOSP Profile | Tương thích | Ổn định |
+| **EvolutionX** | Android 13 – 15 | AOSP Profile | Tương thích | Ổn định |
+| **Generic AOSP / GSI (Treble)** | Android 12 – 16 | AOSP Profile | Tương thích | Ổn định |

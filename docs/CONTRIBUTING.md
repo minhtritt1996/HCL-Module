@@ -9,13 +9,14 @@ Cảm ơn bạn đã quan tâm và muốn đóng góp cho dự án **HyperOS Com
 Chúng tôi đặc biệt khuyến khích các đóng góp tập trung vào các lĩnh vực sau:
 
 1. **Hỗ trợ phiên bản HyperOS mới:** Kiểm thử và chuẩn hóa trên HyperOS 1.0, HyperOS 2.0, HyperOS 3.0 (Android 14, 15, 16...).
-2. **Mở rộng hỗ trợ các bản ROM HyperOS:**
+2. **Mở rộng hỗ trợ các bản ROM HyperOS & AOSP:**
    - Xiaomi.eu
    - HyperTN / TN ToolBox
    - EliteROM
    - MiPA
    - Pulse
    - HyperOS Ports (Port từ các thiết bị flagship sang thiết bị khác)
+   - LineageOS / crDroid / PixelOS / EvolutionX (Nhánh AOSP Profile)
 3. **Độ tương thích thiết bị phần cứng mới:** Bổ sung báo cáo thử nghiệm trên các dòng máy Xiaomi, Redmi, POCO.
 4. **Tương thích Kernel & SuSFS:** Kiểm thử trên các kernel tùy biến hỗ trợ SuSFS (Wild Kernel, ShirkNeko, NoName...).
 5. **Chuẩn hóa thuộc tính (Property Normalization):** Bổ sung các quy tắc phát hiện và chuẩn hóa các thuộc tính hệ thống lạ phát sinh từ các bản mod mới.

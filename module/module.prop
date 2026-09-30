@@ -1,7 +1,7 @@
 id=hyperos_compat
 name=HyperOS Compatibility Layer
-version=v1.3.1
-versionCode=131
+version=v1.3.2
+versionCode=132
 author=minhtritt1996
-description=Local compatibility layer for Xiaomi HyperOS and HyperOS-based custom ROM environments.
-support=https://github.com/minhtritt1996/hyperos-compat
+description=Local compatibility layer for Xiaomi HyperOS and AOSP-based custom ROM environments (LineageOS, crDroid, etc.).
+support=https://github.com/minhtritt1996/HCL-Module
