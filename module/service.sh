@@ -131,8 +131,10 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
     SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
     [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
 
-    # Loai bo MiuiExtraPhoto neu con ton tai tu cac phien ban truoc (day la app goc cua Xiaomi China)
-    sed -i '/MiuiExtraPhoto/d' "$SUS_PATH_FILE" 2>/dev/null || true
+    # Bao ve khoi xung dot Keystore (AlwaysStrong target.txt)
+    if [ -f "/data/adb/tricky_store/target.txt" ]; then
+        sed -i '/com\.vnid/d' /data/adb/tricky_store/target.txt 2>/dev/null || true
+    fi
 
     if [ -n "$COMPONENT_LIST" ]; then
         while read -r p; do
@@ -148,6 +150,8 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
         # Fallback neu chua co danh sach quet
         for p in "/product/priv-app/XiaomiEUExt" \
                  "/product/priv-app/XiaomiEUExt/XiaomiEUExt.apk" \
+                 "/product/priv-app/MiuiExtraPhoto" \
+                 "/product/priv-app/MiuiExtraPhoto/MiuiExtraPhoto.apk" \
                  "/product/app/XiaomiEUInject" \
                  "/product/app/XiaomiEUInject/XiaomiEUInject.apk" \
                  "/system_ext/app/XiaomiEUInject" \

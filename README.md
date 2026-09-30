@@ -9,11 +9,11 @@
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
   <a href="https://github.com/minhtritt1996/HCL-Module/releases/latest">
-    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.5-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
+    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.6-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
   </a>
 </p>
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.5-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.6-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Disclaimer](https://img.shields.io/badge/pháp_lý-Disclaimer-yellow?style=flat-square)](DISCLAIMER.md)
 [![Security](https://img.shields.io/badge/bảo_mật-Security_Boundaries-blueviolet?style=flat-square)](SECURITY.md)
@@ -113,7 +113,7 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 ├──────────────────────────────────────────────────────────────────┤
 │  Lớp 3: ROM Component Isolation (SuSFS sus_path)                 │
 │  • Quét động các gói APK phụ trợ riêng biệt theo từng dòng ROM    │
-│    (HyperOS: XiaomiEUExt, XiaomiEUInject, TNToolbox...           │
+│    (HyperOS: XiaomiEUExt, XiaomiEUInject, MiuiExtraPhoto...       │
 │     AOSP: Lineage Updater, crDroid Updater, system/addon.d...)   │
 │  • Tự động bảo vệ các thành phần thiết yếu (như LineageParts)     │
 │    để không làm gián đoạn giao diện cài đặt hệ thống             │
@@ -145,14 +145,14 @@ Cài đặt các module nền tảng qua trình quản lý root:
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
 ### 2. Cài đặt HyperOS & AOSP Compatibility Layer
-1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.5.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
+1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.6.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài đặt từ bộ nhớ**.
 3. Chọn gói ZIP vừa tải và tiến hành cài đặt.
 4. Khởi động lại thiết bị.
 
 > [!NOTE]
 > **Nâng cấp từ phiên bản tiền nhiệm (v1.2.x / v1.3.x):**
-> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.5`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
+> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.6`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
 
 ---
 

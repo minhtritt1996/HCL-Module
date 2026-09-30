@@ -146,12 +146,11 @@ fi
 ROM_COMPONENT_PATHS=""
 if [ "$ROM_ENV" = "hyperos" ]; then
     ui_print "- Dang quet dong cac thanh phan ROM mod Xiaomi (Xiaomi.eu, HyperTN, Elite, Port)..."
-    # Loai bo MiuiExtraPhoto neu con ton tai tu cac ban cu vi day la app goc Xiaomi
-    sed -i '/MiuiExtraPhoto/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     for base in "/product/priv-app" "/product/app" "/system_ext/priv-app" "/system_ext/app" "/system/priv-app" "/system/app"; do
         if [ -d "$base" ]; then
             matched=$(find "$base" -maxdepth 2 \( \
                 -iname "*xiaomieu*" -o \
+                -iname "*extraphoto*" -o \
                 -iname "*hypertn*" -o \
                 -iname "*tntoolbox*" -o \
                 -iname "*eliterom*" -o \
@@ -230,6 +229,11 @@ fi
 
 # 5. Don dep script cu neu co
 rm -f /data/adb/service.d/hide_custom_rom.sh 2>/dev/null || true
+
+# Bao ve khoi xung dot Keystore (AlwaysStrong target.txt)
+if [ -f "/data/adb/tricky_store/target.txt" ]; then
+    sed -i '/com\.vnid/d' /data/adb/tricky_store/target.txt 2>/dev/null || true
+fi
 
 # Phan quyen thuc thi (khong dung post-fs-data de an toan tuyet doi cho modem)
 set_perm "$MODPATH/service.sh" 0 0 0755
