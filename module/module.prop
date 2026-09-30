@@ -1,6 +1,6 @@
 id=xiaomieu_vneid_cloak
-name=Xiaomi.eu Cloak & VNeID Fix
-version=v1.1.0
-versionCode=110
-author=Antigravity
-description=Tự động ẩn dấu vết ROM Xiaomi.eu/Custom HyperOS, làm sạch build.prop và ẩn app hệ thống an toàn ở giai đoạn boot_completed. Không gây lỗi sóng hay bootloop.
+name=Universal ROM Cloak & Banking/VNeID Fix
+version=v1.2.0
+versionCode=120
+author=minhtritt1996 & Antigravity
+description=Tự động quét động và che giấu toàn diện dấu vết ROM Xiaomi.eu, HyperTN, EliteROM, Custom ROM/Ports. Tương thích VNeID, BIDV, MB Bank. An toàn tuyệt đối cho sóng và hệ thống.

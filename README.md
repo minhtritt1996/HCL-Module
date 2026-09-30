@@ -1,15 +1,15 @@
 <div align="center">
 
-# 🛡️ VNeID Fix Module
+# 🛡️ Universal ROM Cloak & Banking/VNeID Fix
 
-**Xiaomi.eu Cloak & VNeID Fix — Module cho Magisk / KernelSU / APatch**
+**Universal ROM Cloak — Module cho Magisk / KernelSU / APatch**
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.1.0-blue?style=flat-square)](https://github.com/minhtritt1996/VNeID-Fix-Module/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.2.0-blue?style=flat-square)](https://github.com/minhtritt1996/VNeID-Fix-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Đã thử nghiệm](https://img.shields.io/badge/đã_thử-POCO_F5_Pro_%7C_HyperOS_3-orange?style=flat-square)](#thiết-bị-đã-thử-nghiệm)
 [![Root](https://img.shields.io/badge/root-KernelSU_%7C_APatch_%7C_Magisk-red?style=flat-square)](#yêu-cầu)
 
-Module phổ quát dành cho người dùng cài **ROM Xiaomi.eu / Custom HyperOS**, giúp che giấu hoàn toàn dấu vết ROM tùy chỉnh để các ứng dụng nhạy cảm của Việt Nam hoạt động bình thường — bao gồm **VNeID** (`com.vnid`), **BIDV SmartBanking** (`com.vnpay.bidv`) và **MB Bank** (`com.mbmobile`).
+Module phổ quát dành cho người dùng cài **Custom ROM (Xiaomi.eu, HyperTN, EliteROM, MiPA, Pulse, LineageOS / AOSP ports...)**, giúp tự động quét động và che giấu hoàn toàn dấu vết ROM tùy chỉnh để các ứng dụng nhạy cảm của Việt Nam hoạt động bình thường — bao gồm **VNeID** (`com.vnid`), **BIDV SmartBanking** (`com.vnpay.bidv`) và **MB Bank** (`com.mbmobile`).
 
 </div>
 
@@ -49,26 +49,30 @@ ROM Xiaomi.eu nhúng các định danh đặc trưng vào `build.prop` và cài 
 
 ## ⚙️ Cách Hoạt Động
 
-Module sử dụng **3 lớp che giấu** — không sửa phân vùng hệ thống, không overlay, hoàn toàn có thể gỡ bỏ:
+Module sử dụng **3 lớp che giấu thông minh** — tự động thích ứng với mọi bản ROM tùy chỉnh, không sửa phân vùng hệ thống, không overlay, hoàn toàn có thể gỡ bỏ:
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│  Lớp 1: Giả mạo thuộc tính hệ thống (RAM, qua resetprop)        │
-│  • Xóa ro.xiaomi.eu.*, ro.xiaomi.developerid                     │
-│  • Loại bỏ hậu tố _xiaomieu khỏi ro.product.mod_device          │
-│  • Khôi phục ro.build.host về máy chủ build chính thức Xiaomi   │
-│  • Giữ nguyên hậu tố _global (tránh lỗi sóng/modem)            │
+│  Lớp 1: Giả mạo thuộc tính hệ thống động (RAM, resetprop)        │
+│  • Quét động và xóa sạch ro.xiaomi.eu.*, ro.hypertn.*,           │
+│    ro.eliterom.*, ro.mipa.*, ro.lineage.*, developerid...        │
+│  • Tự động chuyển ro.build.type=user và ro.debuggable=0          │
+│  • Chuẩn hóa ro.product.mod_device về chuẩn gốc Xiaomi           │
+│  • Khôi phục ro.build.host về máy chủ build chính thức Xiaomi    │
+│  • Giữ nguyên hậu tố vùng (_global, _eea_global...) bảo vệ sóng  │
 ├──────────────────────────────────────────────────────────────────┤
-│  Lớp 2: Chuyển hướng đọc file build.prop (SuSFS cấp kernel)     │
-│  • Tạo clean_build.prop đã lọc sạch trong lúc cài               │
+│  Lớp 2: Chuyển hướng đọc file build.prop (SuSFS cấp kernel)      │
+│  • Tạo clean_build.prop đã lọc sạch mọi tag ROM mod khi cài đặt  │
 │  • Khi app đọc /system/build.prop, kernel tự động trả về         │
 │    clean_build.prop thay thế                                      │
-│  • UID Scheme 3: chỉ ảnh hưởng app người dùng (uid ≥ 10000)     │
+│  • UID Scheme 3: chỉ ảnh hưởng app người dùng (uid ≥ 10000)      │
 │  • KHÔNG ảnh hưởng init, rild (daemon sóng viễn thông)           │
 ├──────────────────────────────────────────────────────────────────┤
-│  Lớp 3: Ẩn APK hệ thống Xiaomi.eu (SuSFS cấp kernel)            │
-│  • Ẩn /product/priv-app/XiaomiEUExt khỏi trình quét native      │
-│  • Ẩn /product/priv-app/MiuiExtraPhoto                           │
+│  Lớp 3: Quét động và ẩn APK hệ thống mod (SuSFS cấp kernel)      │
+│  • Tự động quét priv-app để tìm mọi APK mod lạ (XiaomiEUExt,     │
+│    MiuiExtraPhoto, HyperTN, TNToolbox, EliteROM, MiPA,           │
+│    LineageParts...) và nạp động vào sus_path                      │
+│  • Ẩn hoàn toàn khỏi trình quét tệp native (C/C++) của VNeID     │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -109,7 +113,7 @@ Cài các module này trước qua KernelSU / Magisk Manager:
 
 ### Bước 2 — Cài VNeID Fix Module
 
-1. Tải phiên bản mới nhất: [`VNeID-Fix-Module-v1.1.0.zip`](https://github.com/minhtritt1996/VNeID-Fix-Module/releases/latest)
+1. Tải phiên bản mới nhất: [`VNeID-Fix-Module-v1.2.0.zip`](https://github.com/minhtritt1996/VNeID-Fix-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài từ bộ nhớ**
 3. Chọn file ZIP vừa tải
 4. Khởi động lại máy
@@ -213,15 +217,13 @@ Nguyên nhân bootloop từng gặp ở phiên bản cũ là chạy `open_redire
 </details>
 
 <details>
-<summary><b>Module này có dùng được trên LineageOS không?</b></summary>
+<summary><b>Module này có dùng được trên HyperTN, EliteROM, LineageOS hoặc các ROM mod khác không?</b></summary>
 
-Không trực tiếp — LineageOS có bộ định danh ROM khác. Các thay đổi cần thiết:
-- Thay bộ lọc `xiaomi.eu` bằng lọc `lineage.*`
-- Thêm `resetprop ro.build.type user` (LineageOS mặc định là `userdebug`)
-- Xử lý `ro.debuggable=1`
-- Bỏ phần xử lý `mod_device` và `XiaomiEUExt`
-
-Phiên bản hỗ trợ LineageOS đang được lên kế hoạch. Xem [issue tracker](https://github.com/minhtritt1996/VNeID-Fix-Module/issues).
+**Có! Từ phiên bản v1.2.0 Universal**, module đã được thiết kế hoàn toàn động để tương thích với tất cả các bản ROM:
+- **Tự động quét động priv-app:** Tự động tìm kiếm các app đặc thù của ROM mod (`*xiaomieu*`, `*extraphoto*`, `*hypertn*`, `*tntoolbox*`, `*eliterom*`, `*mipa*`, `*lineageparts*`...) và thêm vào `sus_path`.
+- **Tự động làm sạch properties:** Tự động lọc và xóa mọi prop của ROM mod (`ro.hypertn.*`, `ro.eliterom.*`, `ro.mipa.*`, `ro.lineage.*`, `ro.xiaomi.eu.*`...).
+- **Xử lý ROM Userdebug / Debuggable:** Tự động ép `ro.build.type` về `user` và `ro.debuggable` về `0` (vốn là dấu hiệu đặc trưng khiến app ngân hàng chặn trên LineageOS/AOSP).
+- **Chuẩn hóa mod_device thông minh:** Tự động nhận diện thiết bị và giữ nguyên cấu hình modem carrier (`_global`, `_eea_global`, `_in_global`...).
 </details>
 
 ---

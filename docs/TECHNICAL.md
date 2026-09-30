@@ -19,49 +19,56 @@ boot_completed = 1  ──► service.sh activates
 ### File Structure
 
 ```
-xiaomieu_vneid_cloak_v1.1.0.zip
+xiaomieu_vneid_cloak_v1.2.0.zip
 ├── META-INF/
 │   └── com/google/android/
 │       ├── update-binary          # KSU/Magisk installer entrypoint
 │       └── updater-script         # Compatibility stub
-├── module.prop                    # Module metadata
-├── customize.sh                   # Install-time logic
-├── service.sh                     # Boot-time property & SuSFS hooks
+├── module.prop                    # Module metadata (v1.2.0 Universal)
+├── customize.sh                   # Install-time logic & dynamic priv-app scanner
+├── service.sh                     # Boot-time dynamic property cleanup & SuSFS hooks
 ├── uninstall.sh                   # Cleanup on module removal
+├── detected_paths.txt             # Dynamically discovered custom ROM priv-apps
 └── clean_build.prop               # Generated clean build.prop (per-device)
 ```
 
 ---
 
-## Layer 1: Property Spoofing (resetprop)
+## Layer 1: Dynamic Property Spoofing (resetprop)
 
 Runs in `service.sh` after `boot_completed=1`.
 
-### Properties Removed
+### Properties Removed / Spoofed Dynamically
 
-| Property | Value (Example) | Reason |
+The module dynamically enumerates active system properties via `getprop` and automatically removes any matching signatures from known custom ROMs:
+
+| Category | Targeted Properties / Signatures | Reason |
 |---|---|---|
-| `ro.xiaomi.developerid` | `miuios` | Xiaomi.eu developer identifier |
-| `ro.xiaomi.eu.ota_device` | `mondrian_xiaomieu_global` | OTA channel identifier |
-| `ro.xiaomi.eu.version.code_time` | `20240912` | Build timestamp marker |
+| **Xiaomi.eu** | `ro.xiaomi.developerid`, `ro.xiaomi.eu.*` | Xiaomi.eu developer identifier & OTA channels |
+| **HyperTN / TN ToolBox** | `*hypertn*`, `*tntoolbox*` | HyperTN custom ROM identifiers |
+| **EliteROM / MiPA / Pulse** | `*eliterom*`, `*mipa*`, `*pulse*` | Custom MIUI/HyperOS port identifiers |
+| **LineageOS / AOSP** | `*lineage*`, `*modversion*` | LineageOS and AOSP custom build signatures |
+| **Build Flags** | `ro.build.type` (userdebug → user), `ro.debuggable` (1 → 0) | Userdebug/debuggable builds trigger instant root detection |
 
 ### Properties Modified
 
-| Property | Before | After |
+| Property | Before (Example) | After |
 |---|---|---|
 | `ro.build.host` | `build-m2088.bpi.xiaomi.eu` | `c5-build-66.bj.xiaomi.com` |
 | `ro.product.mod_device` | `mondrian_xiaomieu_global` | `mondrian_global` |
 
-### Modem Safety
+### Modem Safety & Dynamic Normalization
 
 > [!IMPORTANT]
-> The `_global` suffix in `ro.product.mod_device` must be preserved.
+> The carrier region suffix (`_global`, `_eea_global`, `_in_global`, `_ru_global`) in `ro.product.mod_device` must be preserved.
 >
 > Xiaomi devices use this suffix to select the correct carrier configuration bundle:
 > - `mondrian_global` → loads `CarrierConfig_Global.apk` (correct for VN/EU)
 > - `mondrian` → loads `CarrierConfig_CN.apk` (China only — breaks VoLTE/dual-SIM LTE outside China)
 >
-> The module uses `sed -E 's/_(xiaomieu|eu)//g'` which strips **only** the Xiaomi.eu suffix, leaving `_global` intact.
+> In v1.2.0, the module evaluates the current `ro.product.mod_device` dynamically:
+> - If it contains `_in_global`, `_ru_global`, `_eea_global`, or `_global`, the clean device code retains the corresponding exact suffix.
+> - Strips all mod tags (`_xiaomieu`, `_hypertn`, `_elite`, `_mipa`, `_pulse`, `_mod`, `_custom`).
 
 ---
 
@@ -93,35 +100,42 @@ Scheme 3 = userland apps only (uid >= 10000)
 
 ### clean_build.prop Generation
 
-During `customize.sh`, the module generates `clean_build.prop` from the live system:
+During `customize.sh`, the module generates `clean_build.prop` from the live system using portable POSIX/Toybox-compatible `sed`:
 
 ```bash
 sed -e "s/^ro\.build\.host=.*/ro.build.host=c5-build-66.bj.xiaomi.com/" \
-    -e "/# ADDED BY XIAOMI\.EU/d" \
-    -e "/MIUIOS\.CZ/d" \
-    -e "/MIUIPOLSKA\.PL/d" \
-    -e "/^ro\.xiaomi\.developerid=/d" \
-    -e "/^ro\.xiaomi\.eu\./d" \
-    -e "s/_xiaomieu//g" \
+    -e "/[Xx][Ii][Aa][Oo][Mm][Ii]\.[Ee][Uu]/d" \
+    -e "/[Dd][Ee][Vv][Ee][Ll][Oo][Pp][Ee][Rr][Ii][Dd]/d" \
+    -e "/[Hh][Yy][Pp][Ee][Rr][Tt][Nn]/d" \
+    -e "/[Ee][Ll][Ii][Tt][Ee][Rr][Oo][Mm]/d" \
+    -e "/[Mm][Ii][Pp][Aa]/d" \
+    -e "/[Pp][Uu][Ll][Ss][Ee]/d" \
+    -e "/[Ll][Ii][Nn][Ee][Aa][Gg][Ee]/d" \
+    -e "s/_[Xx][Ii][Aa][Oo][Mm][Ii][Ee][Uu]//g" \
+    -e "s/_[Hh][Yy][Pp][Ee][Rr][Tt][Nn]//g" \
+    -e "s/_[Ee][Ll][Ii][Tt][Ee]//g" \
+    -e "s/_[Mm][Ii][Pp][Aa]//g" \
+    -e "s/^ro\.build\.type=userdebug/ro.build.type=user/" \
+    -e "s/^ro\.debuggable=1/ro.debuggable=0/" \
     /system/build.prop > "$MODPATH/clean_build.prop"
 ```
 
-This ensures the redirect file is always generated from the actual device's `build.prop` — making the module portable across any device without hardcoded values.
+This ensures the redirect file is dynamically tailored to the host system without retaining any signature of custom firmware.
 
 ---
 
-## Layer 3: sus_path Hiding
+## Layer 3: Dynamic sus_path Hiding
 
-`ksu_susfs add_sus_path <path>` makes the specified path invisible to directory listings and `stat()` calls from userland processes:
+`ksu_susfs add_sus_path <path>` makes the specified path invisible to directory listings and `stat()` calls from userland processes.
 
-```bash
-ksu_susfs add_sus_path /product/priv-app/XiaomiEUExt
-ksu_susfs add_sus_path /product/priv-app/XiaomiEUExt/XiaomiEUExt.apk
-ksu_susfs add_sus_path /product/priv-app/MiuiExtraPhoto
-ksu_susfs add_sus_path /product/priv-app/MiuiExtraPhoto/MiuiExtraPhoto.apk
-```
+In v1.2.0, instead of hardcoding specific paths, `customize.sh` dynamically scans the target partitions (`/product/priv-app`, `/system_ext/priv-app`, `/system/priv-app`) for any directories or APKs matching custom ROM fingerprints:
+- Xiaomi.eu (`*xiaomieu*`, `*extraphoto*`)
+- HyperTN / TN ToolBox (`*hypertn*`, `*tntoolbox*`)
+- EliteROM (`*eliterom*`, `*elite*`)
+- MiPA / Pulse (`*mipa*`, `*pulse*`)
+- LineageOS (`*lineageparts*`)
 
-VNeID's native C scanner enumerates `/product/priv-app/` looking for Xiaomi.eu APKs. With `sus_path` active, these entries return `ENOENT` (No such file or directory) to the scanner even though the APKs are still physically present on the partition.
+Found items are saved to `detected_paths.txt` and automatically registered into SuSFS during boot (`service.sh`) and synced into `/data/adb/susfs4ksu/sus_path.txt`. VNeID and banking native scanners receive `ENOENT` (No such file or directory) while the system continues running normally.
 
 ---
 
