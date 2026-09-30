@@ -5,11 +5,6 @@
 **Compatibility layer dành cho Xiaomi HyperOS và các ROM tùy biến dựa trên HyperOS.**
 
 <p align="center">
-  <b>Tác giả:</b> <a href="https://github.com/minhtritt1996">minhtritt1996</a><br>
-  <b>Kho mã nguồn:</b> <a href="https://github.com/minhtritt1996/hyperos-compat">https://github.com/minhtritt1996/hyperos-compat</a>
-</p>
-
-<p align="center">
   <a href="https://github.com/minhtritt1996/hyperos-compat">
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
