@@ -9,11 +9,11 @@
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
   <a href="https://github.com/minhtritt1996/HCL-Module/releases/latest">
-    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.3-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
+    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.4-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
   </a>
 </p>
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.3-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.4-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Disclaimer](https://img.shields.io/badge/pháp_lý-Disclaimer-yellow?style=flat-square)](DISCLAIMER.md)
 [![Security](https://img.shields.io/badge/bảo_mật-Security_Boundaries-blueviolet?style=flat-square)](SECURITY.md)
@@ -84,7 +84,7 @@ Compatibility Testing
 Trong các bản ROM tùy biến (cả **Xiaomi HyperOS-based** như Xiaomi.eu, HyperTN, EliteROM... và **AOSP-based** như LineageOS, crDroid, EvolutionX...), quá trình phát triển thường để lại các thuộc tính cấu hình không đồng nhất so với bản phát hành thương mại chính thức (Stock Firmware):
 - Cờ kiểm thử của nhà phát triển ROM (`ro.build.type=userdebug`, `ro.debuggable=1`).
 - Máy chủ biên dịch không thuộc hạ tầng chính thức (`ro.build.host`), hoặc các thuộc tính mang dấu hiệu nhận diện bản mod (`ro.lineage.*`, `ro.crdroid.*`, `ro.product.mod_device`, `ro.modversion`...).
-- Tích hợp thêm các tiện ích hệ thống riêng của bản mod (`XiaomiEUExt`, `MiuiExtraPhoto`, `TNToolbox`, OTA updaters...).
+- Tích hợp thêm các tiện ích hệ thống riêng của bản mod (`XiaomiEUExt`, `XiaomiEUInject`, `TNToolbox`, OTA updaters...).
 
 Những khác biệt này khiến môi trường thực thi thiếu tính nhất quán so với tiêu chuẩn Android Compatibility Definition Document (CDD). **HyperOS & AOSP Compatibility Layer** tích hợp cơ chế **Nhận diện môi trường thông minh (Smart Environment Detection)**, tự động nhận biết hệ điều hành đang chạy để áp dụng hồ sơ chuẩn hóa tương ứng mà không gây xung đột hay cấy nhầm thông số giữa các dòng ROM.
 
@@ -113,7 +113,7 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 ├──────────────────────────────────────────────────────────────────┤
 │  Lớp 3: ROM Component Isolation (SuSFS sus_path)                 │
 │  • Quét động các gói APK phụ trợ riêng biệt theo từng dòng ROM    │
-│    (HyperOS: XiaomiEUExt, MiuiExtraPhoto, TNToolbox...           │
+│    (HyperOS: XiaomiEUExt, XiaomiEUInject, TNToolbox...           │
 │     AOSP: Lineage Updater, crDroid Updater...)                   │
 │  • Tự động bảo vệ các thành phần thiết yếu (như LineageParts)     │
 │    để không làm gián đoạn giao diện cài đặt hệ thống             │
@@ -145,14 +145,14 @@ Cài đặt các module nền tảng qua trình quản lý root:
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
 ### 2. Cài đặt HyperOS & AOSP Compatibility Layer
-1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.3.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
+1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.4.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài đặt từ bộ nhớ**.
 3. Chọn gói ZIP vừa tải và tiến hành cài đặt.
 4. Khởi động lại thiết bị.
 
 > [!NOTE]
 > **Nâng cấp từ phiên bản tiền nhiệm (v1.2.x / v1.3.x):**
-> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.3`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
+> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.4`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
 
 ---
 

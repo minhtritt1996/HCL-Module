@@ -25,6 +25,7 @@ if [ -f "/data/adb/susfs4ksu/sus_path.txt" ]; then
 
     # Don dep fallback cu
     sed -i '/XiaomiEUExt/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
+    sed -i '/XiaomiEUInject/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     sed -i '/MiuiExtraPhoto/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     sed -i '/HyperTN/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
     sed -i '/TNToolbox/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true

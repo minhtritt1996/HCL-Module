@@ -131,6 +131,9 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
     SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
     [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
 
+    # Loai bo MiuiExtraPhoto neu con ton tai tu cac phien ban truoc (day la app goc cua Xiaomi China)
+    sed -i '/MiuiExtraPhoto/d' "$SUS_PATH_FILE" 2>/dev/null || true
+
     if [ -n "$COMPONENT_LIST" ]; then
         while read -r p; do
             [ -z "$p" ] && continue
@@ -145,8 +148,10 @@ if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version
         # Fallback neu chua co danh sach quet
         for p in "/product/priv-app/XiaomiEUExt" \
                  "/product/priv-app/XiaomiEUExt/XiaomiEUExt.apk" \
-                 "/product/priv-app/MiuiExtraPhoto" \
-                 "/product/priv-app/MiuiExtraPhoto/MiuiExtraPhoto.apk"; do
+                 "/product/app/XiaomiEUInject" \
+                 "/product/app/XiaomiEUInject/XiaomiEUInject.apk" \
+                 "/system_ext/app/XiaomiEUInject" \
+                 "/system/app/XiaomiEUInject"; do
             if [ -e "$p" ]; then
                 $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
                 if [ -f "$SUS_PATH_FILE" ]; then
