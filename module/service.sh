@@ -105,10 +105,18 @@ fi
 SUSFS_BIN=""
 if [ -f "/data/adb/ksu/bin/ksu_susfs" ]; then
     SUSFS_BIN="/data/adb/ksu/bin/ksu_susfs"
+elif [ -f "/data/adb/ksu/bin/susfs" ]; then
+    SUSFS_BIN="/data/adb/ksu/bin/susfs"
 elif [ -f "/data/adb/ap/bin/ap_susfs" ]; then
     SUSFS_BIN="/data/adb/ap/bin/ap_susfs"
+elif [ -f "/data/adb/ap/bin/susfs" ]; then
+    SUSFS_BIN="/data/adb/ap/bin/susfs"
 elif command -v ksu_susfs >/dev/null 2>&1; then
     SUSFS_BIN="ksu_susfs"
+elif command -v ap_susfs >/dev/null 2>&1; then
+    SUSFS_BIN="ap_susfs"
+elif command -v susfs >/dev/null 2>&1; then
+    SUSFS_BIN="susfs"
 fi
 
 if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version 2>/dev/null)" ]; then
