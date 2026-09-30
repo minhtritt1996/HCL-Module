@@ -230,10 +230,19 @@ fi
 # 5. Don dep script cu neu co
 rm -f /data/adb/service.d/hide_custom_rom.sh 2>/dev/null || true
 
-# Bao ve khoi xung dot Keystore (AlwaysStrong target.txt)
-if [ -f "/data/adb/tricky_store/target.txt" ]; then
-    sed -i '/com\.vnid/d' /data/adb/tricky_store/target.txt 2>/dev/null || true
+# Bao ve khoi xung dot Keystore (AlwaysStrong / TrickyStore)
+if [ -d "/data/adb/tricky_store" ]; then
+    touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
+    if [ -f "/data/adb/tricky_store/app_keybox.map" ]; then
+        grep -q "^com\.vnid" /data/adb/tricky_store/app_keybox.map 2>/dev/null || echo -e "com.vnid\toff" >> /data/adb/tricky_store/app_keybox.map
+    else
+        echo -e "com.vnid\toff" > /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
+    fi
+    [ -f "/data/adb/tricky_store/target.txt" ] && sed -i '/com\.vnid/d' /data/adb/tricky_store/target.txt 2>/dev/null || true
 fi
+
+# Don dep bo nho cache ghi nhan vi pham cua Promon Shield RASP neu co
+rm -f /data/data/com.vnid/files/xwoccmwldwasxm.dat /data/data/com.vnid/files/cmwoawp.ogg 2>/dev/null || true
 
 # Phan quyen thuc thi (khong dung post-fs-data de an toan tuyet doi cho modem)
 set_perm "$MODPATH/service.sh" 0 0 0755
