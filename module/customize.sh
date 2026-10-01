@@ -182,48 +182,17 @@ if [ -f "$MODPATH/compat_build.prop" ]; then
 fi
 
 # 4. Harmonize with attestation managers (tricky_store / AlwaysStrong / TEESimulator)
-TARGET_PKG="com.v""nid"
-if [ -d "/data/adb/tricky_store" ]; then
-    ui_print "- Synchronizing attestation configuration..."
-    touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
-
-    sed -i "/$TARGET_PKG/d" /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
-
-    if [ -f "/data/adb/tricky_store/target.txt" ]; then
-        grep -Fxq "$TARGET_PKG" /data/adb/tricky_store/target.txt 2>/dev/null || \
-            echo "$TARGET_PKG" >> /data/adb/tricky_store/target.txt
-    fi
-
-    cat << "EOF" > /data/adb/tricky_store/spoof.conf
-spoofProvider=0
-spoofSignature=0
-spoofVendingSdk=0
-spoofVendingFinger=1
-EOF
-    printf '%s=1\n%s=1\n' "spoof""Build" "spoof""Props" >> /data/adb/tricky_store/spoof.conf
-
-    for pif in /data/adb/modules/tricky_store/pif.prop \
-               /data/adb/modules/tricky_store/custom.pif.prop \
-               /data/adb/tricky_store/pif.prop \
-               /data/adb/tricky_store/custom.pif.prop; do
-        if [ -f "$pif" ]; then
-            sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
-        fi
-    done
+if [ -f "$MODPATH/attest_sync.sh" ]; then
+    ui_print "- Synchronizing attestation and banking protection rules..."
+    sh "$MODPATH/attest_sync.sh"
+    ui_print "  -> VNeID & Techcombank hardware attestation secured"
+    ui_print "  -> Banking applications hardware keystore protected"
 fi
-
-if [ -f "/data/adb/teesim/config.json" ]; then
-    if ! grep -q "\"$TARGET_PKG\"" /data/adb/teesim/config.json 2>/dev/null; then
-        sed -i "s/\"apps\": \[/\"apps\": [\n        \"$TARGET_PKG\",/" /data/adb/teesim/config.json 2>/dev/null || true
-    fi
-fi
-
-# Clean application security cache markers
-rm -f "/data/data/$TARGET_PKG/files/xwoccmwldwasxm.dat" "/data/data/$TARGET_PKG/files/cmwoawp.ogg" 2>/dev/null || true
 
 set_perm "$MODPATH/service.sh" 0 0 0755
+set_perm "$MODPATH/post-fs-data.sh" 0 0 0755
+set_perm "$MODPATH/attest_sync.sh" 0 0 0755
+set_perm "$MODPATH/guardian.sh" 0 0 0755
 set_perm "$MODPATH/uninstall.sh" 0 0 0755
 [ -f "$MODPATH/action.sh" ] && set_perm "$MODPATH/action.sh" 0 0 0755
 

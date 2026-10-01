@@ -144,41 +144,12 @@ if [ -n "$SUSFS_BIN" ] && [ -n "$TARGET_COMPAT_PROP" ]; then
 fi
 
 # Harmonize runtime attestation configuration with tricky_store / AlwaysStrong
-TARGET_PKG="com.v""nid"
-if [ -d "/data/adb/tricky_store" ]; then
-    touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
-    sed -i "/$TARGET_PKG/d" /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
-
-    if [ -f "/data/adb/tricky_store/target.txt" ]; then
-        grep -Fxq "$TARGET_PKG" /data/adb/tricky_store/target.txt 2>/dev/null || \
-            echo "$TARGET_PKG" >> /data/adb/tricky_store/target.txt
-    fi
-
-    cat << "EOF" > /data/adb/tricky_store/spoof.conf
-spoofProvider=0
-spoofSignature=0
-spoofVendingSdk=0
-spoofVendingFinger=1
-EOF
-    printf '%s=1\n%s=1\n' "spoof""Build" "spoof""Props" >> /data/adb/tricky_store/spoof.conf
-
-    for pif in /data/adb/modules/tricky_store/pif.prop \
-               /data/adb/modules/tricky_store/custom.pif.prop \
-               /data/adb/tricky_store/pif.prop \
-               /data/adb/tricky_store/custom.pif.prop; do
-        if [ -f "$pif" ]; then
-            sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
-            sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
-        fi
-    done
+if [ -f "$MODDIR/attest_sync.sh" ]; then
+    sh "$MODDIR/attest_sync.sh" >/dev/null 2>&1
 fi
 
-if [ -f "/data/adb/teesim/config.json" ]; then
-    if ! grep -q "\"$TARGET_PKG\"" /data/adb/teesim/config.json 2>/dev/null; then
-        sed -i "s/\"apps\": \[/\"apps\": [\n        \"$TARGET_PKG\",/" /data/adb/teesim/config.json 2>/dev/null || true
-    fi
+# Launch autonomous compatibility guardian daemon
+if [ -f "$MODDIR/guardian.sh" ]; then
+    setsid sh "$MODDIR/guardian.sh" </dev/null >/dev/null 2>&1 &
 fi
 
-# Clean application security cache markers
-rm -f "/data/data/$TARGET_PKG/files/xwoccmwldwasxm.dat" "/data/data/$TARGET_PKG/files/cmwoawp.ogg" 2>/dev/null || true
