@@ -26,10 +26,22 @@ remove_owned_lines() {
 remove_owned_lines "$SUS_PATH_FILE" "$MODDIR/owned_sus_paths.txt"
 remove_owned_lines "$SUS_REDIRECT_FILE" "$MODDIR/owned_open_redirect.txt"
 
+# Clean legacy references
+if [ -f "$SUS_PATH_FILE" ]; then
+    sed -i '/MiuiExtraPhoto/d' "$SUS_PATH_FILE" 2>/dev/null || true
+fi
+if [ -f "$SUS_REDIRECT_FILE" ]; then
+    sed -i '/compat_build\.prop/d' "$SUS_REDIRECT_FILE" 2>/dev/null || true
+    sed -i '/clean_build\.prop/d' "$SUS_REDIRECT_FILE" 2>/dev/null || true
+    sed -i '/hyperos_compat_build\.prop/d' "$SUS_REDIRECT_FILE" 2>/dev/null || true
+fi
+
 rm -f "$MODDIR/owned_sus_paths.txt"
 rm -f "$MODDIR/owned_open_redirect.txt"
 rm -f "$MODDIR/compat_isolated_components.txt"
 rm -f "$MODDIR/detected_paths.txt"
 
 rm -f /mnt/vendor/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+rm -f /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
 rm -f /data/adb/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+rm -f /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true

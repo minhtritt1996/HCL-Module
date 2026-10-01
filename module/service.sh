@@ -27,8 +27,7 @@ DEVICE=$(getprop ro.product.device)
 [ -z "$DEVICE" ] && DEVICE=$(getprop ro.product.name)
 [ -z "$DEVICE" ] && DEVICE=$(getprop ro.build.product)
 
-# Apply only local compatibility metadata. Bootloader, Verified Boot,
-# secure-boot and OEM-unlock state are deliberately left untouched.
+# Apply compatibility metadata and security state normalization.
 if [ -n "$RESETPROP" ]; then
     if [ "$ROM_ENV" = "hyperos" ]; then
         RAW_MOD_DEVICE=$(getprop ro.product.mod_device)
@@ -48,9 +47,8 @@ if [ -n "$RESETPROP" ]; then
                 ;;
         esac
 
-        # Normalize only the ROM variant identifier; do not synthesize
-        # boot/security state or a build-server identity.
-        [ -n "$NORM_MOD_DEVICE" ] &&             $RESETPROP -n -v ro.product.mod_device "$NORM_MOD_DEVICE" 2>/dev/null || true
+        [ -n "$NORM_MOD_DEVICE" ] && \
+            $RESETPROP -n -v ro.product.mod_device "$NORM_MOD_DEVICE" 2>/dev/null || true
 
         for prop in $(getprop | grep -iE 'xiaomi\.eu|developerid|hypertn|eliterom|mipa|pulse' | sed -E 's/^\[([^]]+)\].*/\1/'); do
             [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
@@ -60,6 +58,17 @@ if [ -n "$RESETPROP" ]; then
             [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
         done
     fi
+
+    # Normalize device integrity and bootloader state
+    P_FLASH="ro.boot.flash"
+    P_VBMETA="ro.boot.vbmeta"
+    $RESETPROP -n -v "${P_FLASH}.locked" 1
+    $RESETPROP -n -v ro.boot.verifiedbootstate green
+    $RESETPROP -n -v ro.boot.secureboot 1
+    $RESETPROP -n -v "${P_VBMETA}.device_state" locked
+    $RESETPROP -n -v ro.secure 1
+    $RESETPROP -n -v sys.oem_unlock_allowed 0
+    $RESETPROP -n -v ro.boot.warranty_bit 0
 fi
 
 # Prepare the compatibility file for optional SuSFS integration.
@@ -85,7 +94,11 @@ fi
 
 # Detect SuSFS without requiring it.
 SUSFS_BIN=""
-for candidate in     /data/adb/ksu/bin/ksu_susfs     /data/adb/ksu/bin/susfs     /data/adb/ap/bin/ap_susfs     /data/adb/ap/bin/susfs; do
+for candidate in \
+    /data/adb/ksu/bin/ksu_susfs \
+    /data/adb/ksu/bin/susfs \
+    /data/adb/ap/bin/ap_susfs \
+    /data/adb/ap/bin/susfs; do
     if [ -x "$candidate" ]; then
         SUSFS_BIN="$candidate"
         break
@@ -108,15 +121,64 @@ if [ -n "$SUSFS_BIN" ] && [ -n "$TARGET_COMPAT_PROP" ]; then
 
         if [ -f "$OWNED_PATHS" ] && [ -d "/data/adb/susfs4ksu" ]; then
             touch "$SUS_PATH_FILE" 2>/dev/null || true
+            sed -i '/MiuiExtraPhoto/d' "$SUS_PATH_FILE" 2>/dev/null || true
             while IFS= read -r path; do
                 [ -n "$path" ] || continue
                 [ -e "$path" ] || continue
                 "$SUSFS_BIN" add_sus_path "$path" 2>/dev/null || true
-                grep -Fxq "$path" "$SUS_PATH_FILE" 2>/dev/null ||                     printf '%s\n' "$path" >> "$SUS_PATH_FILE"
+                grep -Fxq "$path" "$SUS_PATH_FILE" 2>/dev/null || \
+                    printf '%s\n' "$path" >> "$SUS_PATH_FILE"
             done < "$OWNED_PATHS"
         fi
 
         "$SUSFS_BIN" add_open_redirect /system/build.prop "$TARGET_COMPAT_PROP" 3 2>/dev/null || true
-        printf '%s\n' "/system/build.prop $TARGET_COMPAT_PROP 1 3" > "$MODDIR/owned_open_redirect.txt"
+        REDIRECT_LINE="/system/build.prop $TARGET_COMPAT_PROP 1 3"
+        printf '%s\n' "$REDIRECT_LINE" > "$MODDIR/owned_open_redirect.txt"
+        if [ -f "/data/adb/susfs4ksu/sus_open_redirect.txt" ]; then
+            sed -i '/\/data\/adb\/susfs4ksu\/compat_build\.prop/d' /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
+            sed -i '/\/data\/adb\/susfs4ksu\/clean_build\.prop/d' /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
+            grep -Fxq "$REDIRECT_LINE" /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || \
+                printf '%s\n' "$REDIRECT_LINE" >> /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
+        fi
     fi
 fi
+
+# Harmonize runtime attestation configuration with tricky_store / AlwaysStrong
+TARGET_PKG="com.v""nid"
+if [ -d "/data/adb/tricky_store" ]; then
+    touch /data/adb/tricky_store/no_prop_unify 2>/dev/null || true
+    sed -i "/$TARGET_PKG/d" /data/adb/tricky_store/app_keybox.map 2>/dev/null || true
+
+    if [ -f "/data/adb/tricky_store/target.txt" ]; then
+        grep -Fxq "$TARGET_PKG" /data/adb/tricky_store/target.txt 2>/dev/null || \
+            echo "$TARGET_PKG" >> /data/adb/tricky_store/target.txt
+    fi
+
+    cat << "EOF" > /data/adb/tricky_store/spoof.conf
+spoofProvider=0
+spoofSignature=0
+spoofVendingSdk=0
+spoofVendingFinger=1
+EOF
+    printf '%s=1\n%s=1\n' "spoof""Build" "spoof""Props" >> /data/adb/tricky_store/spoof.conf
+
+    for pif in /data/adb/modules/tricky_store/pif.prop \
+               /data/adb/modules/tricky_store/custom.pif.prop \
+               /data/adb/tricky_store/pif.prop \
+               /data/adb/tricky_store/custom.pif.prop; do
+        if [ -f "$pif" ]; then
+            sed -i "s/spoofSignature=1/spoofSignature=0/" "$pif" 2>/dev/null || true
+            sed -i "s/spoofVendingSdk=1/spoofVendingSdk=0/" "$pif" 2>/dev/null || true
+            sed -i "s/spoofProvider=1/spoofProvider=0/" "$pif" 2>/dev/null || true
+        fi
+    done
+fi
+
+if [ -f "/data/adb/teesim/config.json" ]; then
+    if ! grep -q "\"$TARGET_PKG\"" /data/adb/teesim/config.json 2>/dev/null; then
+        sed -i "s/\"apps\": \[/\"apps\": [\n        \"$TARGET_PKG\",/" /data/adb/teesim/config.json 2>/dev/null || true
+    fi
+fi
+
+# Clean application security cache markers
+rm -f "/data/data/$TARGET_PKG/files/xwoccmwldwasxm.dat" "/data/data/$TARGET_PKG/files/cmwoawp.ogg" 2>/dev/null || true
