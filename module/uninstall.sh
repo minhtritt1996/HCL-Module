@@ -1,37 +1,35 @@
 #!/system/bin/sh
-# Go bo module va don dep sach se cac quy tac
+# Remove only compatibility rules owned by this module.
 MODDIR=${0%/*}
+SUSFS_DIR="/data/adb/susfs4ksu"
+SUS_PATH_FILE="$SUSFS_DIR/sus_path.txt"
+SUS_REDIRECT_FILE="$SUSFS_DIR/sus_open_redirect.txt"
 
-if [ -f "/data/adb/susfs4ksu/sus_open_redirect.txt" ]; then
-    sed -i '/compat_build\.prop/d' /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
-    sed -i '/clean_build\.prop/d' /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
-fi
+remove_owned_lines() {
+    file="$1"
+    list="$2"
+    [ -f "$file" ] || return 0
+    [ -f "$list" ] || return 0
 
-if [ -f "/data/adb/susfs4ksu/sus_path.txt" ]; then
-    COMPONENT_LIST=""
-    if [ -f "$MODDIR/compat_isolated_components.txt" ]; then
-        COMPONENT_LIST="$MODDIR/compat_isolated_components.txt"
-    elif [ -f "$MODDIR/detected_paths.txt" ]; then
-        COMPONENT_LIST="$MODDIR/detected_paths.txt"
-    fi
+    tmp="${file}.hyperos_compat.tmp"
+    cp -f "$file" "$tmp" 2>/dev/null || return 0
 
-    if [ -n "$COMPONENT_LIST" ]; then
-        while read -r p; do
-            [ -z "$p" ] && continue
-            escaped_p=$(echo "$p" | sed 's/\//\\\//g')
-            sed -i "/$escaped_p/d" /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-        done < "$COMPONENT_LIST"
-    fi
+    while IFS= read -r line; do
+        [ -n "$line" ] || continue
+        grep -Fvx "$line" "$tmp" > "${tmp}.next" 2>/dev/null || :
+        mv -f "${tmp}.next" "$tmp" 2>/dev/null || return 0
+    done < "$list"
 
-    # Don dep fallback cu
-    sed -i '/XiaomiEUExt/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/XiaomiEUInject/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/MiuiExtraPhoto/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/HyperTN/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/TNToolbox/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/Elite/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-    sed -i '/addon\.d/d' /data/adb/susfs4ksu/sus_path.txt 2>/dev/null || true
-fi
+    mv -f "$tmp" "$file" 2>/dev/null || rm -f "$tmp"
+}
+
+remove_owned_lines "$SUS_PATH_FILE" "$MODDIR/owned_sus_paths.txt"
+remove_owned_lines "$SUS_REDIRECT_FILE" "$MODDIR/owned_open_redirect.txt"
+
+rm -f "$MODDIR/owned_sus_paths.txt"
+rm -f "$MODDIR/owned_open_redirect.txt"
+rm -f "$MODDIR/compat_isolated_components.txt"
+rm -f "$MODDIR/detected_paths.txt"
 
 rm -f /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
 rm -f /mnt/vendor/susfs4ksu/clean_build.prop 2>/dev/null || true
