@@ -32,17 +32,28 @@ To ensure complete clarity regarding what this software does and does not do, ou
 ## 3. Network Communication Model
 
 > **Network Policy:**  
-> The compatibility service itself does not perform telemetry, phone-home requests, or application-level network communication. The optional Action button may launch the project webpage in the user's browser.
+> The compatibility service itself does not implement telemetry, phone-home requests, or application-level network communication. The optional Action button may launch the project webpage in the user's browser.
 
 No background processes spawn network connections, transmit device logs, or poll remote servers.
 
 ---
 
-## 4. Reporting a Vulnerability
+## 4. Runtime Safety Boundaries
+
+The module deliberately does **not** modify or synthesize:
+- Bootloader lock state;
+- Android Verified Boot state;
+- OEM unlock state;
+- Hardware-backed attestation keys;
+- Third-party application data.
+
+The module also does not modify configuration files belonging to other root modules.
+
+## 5. Reporting a Vulnerability
 
 We welcome responsible security disclosures. If you discover a vulnerability or safety issue:
 
 1. **Do NOT open a public GitHub issue.**
 2. Report the vulnerability privately via GitHub Private Vulnerability Reporting on this repository.
 3. Include detailed reproduction steps, target Android/HyperOS version, and suggested remediation if available.
-4. We aim to review and respond to valid security reports within 72 hours.
+4. We aim to review and respond to valid security reports as soon as practical.
