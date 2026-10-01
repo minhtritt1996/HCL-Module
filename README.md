@@ -207,10 +207,10 @@ Có. Cơ chế Lớp 1 (chuẩn hóa thuộc tính qua `resetprop`) hoạt độ
 <details>
 <summary><b>2. Module có gây nguy cơ bootloop hoặc ảnh hưởng đến sóng di động không?</b></summary>
 
-Tuyệt đối an toàn. Module tuân thủ nguyên tắc thiết kế nghiêm ngặt:
+Module được thiết kế để giảm thiểu rủi ro, nhưng không thể bảo đảm tuyệt đối an toàn trên mọi thiết bị. Các nguyên tắc chính:
 1. Chỉ kích hoạt sau khi hệ thống hoàn tất khởi động (`sys.boot_completed=1`), không can thiệp giai đoạn sớm (`post-fs-data`).
 2. Tự động nhận diện và bảo toàn nguyên vẹn hậu tố phân vùng mạng (`_global`, `_eea_global`, `_in_global`) trong `ro.product.mod_device`.
-3. Chỉ áp dụng chuyển hướng tệp cho ứng dụng không gian người dùng (`uid >= 10000`).
+3. Chỉ tạo compatibility view cho phạm vi UID ứng dụng mà SuSFS hỗ trợ; trạng thái bootloader và Verified Boot của thiết bị không bị thay đổi.
 </details>
 
 <details>
