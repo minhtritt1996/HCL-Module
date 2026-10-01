@@ -59,9 +59,9 @@ Trong các bản ROM tùy biến, các nhà phát triển thường điều ch�
 ### Nhánh 1: Custom HyperOS (Xiaomi.eu, HyperTN, EliteROM, MiPA, Pulse...)
 | Thuộc tính | Giá trị trên Stock Firmware | Giá trị trên Custom HyperOS | Nguyên nhân kỹ thuật phát sinh khác biệt |
 |---|---|---|---|
-| `ro.build.type` | `user` | Thường bị đổi thành `userdebug` | Giúp dev bật adb root, xem log chi tiết khi port ROM. |
-| `ro.debuggable` | `0` | Thường bị đổi thành `1` | Cho phép gỡ lỗi tiến trình qua JDWP/ADB. |
-| `ro.build.host` | Server chính thức Xiaomi (`c5-build-*.bj.xiaomi.com`) | Server của team port (`build-*.xiaomi.eu`, `hypertn-builder`...) | Máy chủ thực tế biên dịch bản build ROM tùy biến. |
+| `ro.build.type` | Giá trị thực tế của ROM | Phụ thuộc ROM | Module không ép giá trị |
+| `ro.debuggable` | Giá trị thực tế của ROM | Phụ thuộc ROM | Module không ép giá trị |
+| `ro.build.host` | Giá trị build thực tế | Có thể khác theo ROM | Module giữ nguyên giá trị |
 | `ro.product.mod_device` | `mondrian_global`, `ishtar_eea_global` | `mondrian_xiaomieu_global`, `mondrian_hypertn` | Dùng để phân định biến thể ROM và định tuyến cập nhật OTA riêng. |
 | `ro.xiaomi.developerid` | Không tồn tại | Định danh của dev biên dịch | Chữ ký định danh cá nhân của lập trình viên ROM. |
 | `ro.xiaomi.eu.*` | Không tồn tại | Các cờ tính năng bổ trợ của Xiaomi.eu | Kích hoạt bản dịch đa ngôn ngữ và các bản vá nội bộ. |
@@ -113,9 +113,9 @@ Khi hoạt động trên môi trường AOSP thuần, LineageOS hoặc crDroid:
 Nhiều thư viện native (C/C++) không gọi API Java `SystemProperties.get()` mà mở trực tiếp tệp `/system/build.prop` bằng lời gọi hệ thống `open()`.
 
 Để xử lý trường hợp này:
-1. Trong quá trình cài đặt (`customize.sh`), module tự động tạo ra tệp `compat_build.prop` thích ứng riêng theo môi trường đã nhận diện:
-   - **Trên HyperOS:** Lọc bỏ cờ ROM Xiaomi.eu/HyperTN, chuẩn hóa host và mod_device;
-   - **Trên AOSP:** Lọc bỏ các dòng `ro.lineage.*`, `ro.crdroid.*`, `ro.modversion`, chuẩn hóa `ro.build.type=user`, `ro.debuggable=0` mà không thêm các trường lạ của Xiaomi.
+1. Trong quá trình cài đặt (`customize.sh`), module tự động tạo ra tệp `hyperos_compat_build.prop` thích ứng riêng theo môi trường đã nhận diện:
+   - **Trên HyperOS:** Lọc bỏ cờ ROM Xiaomi.eu/HyperTN, chuẩn hóa `ro.product.mod_device` khi có thể;
+   - **Trên AOSP:** Lọc bỏ các dòng `ro.lineage.*`, `ro.crdroid.*`, `ro.modversion`, không ép `ro.build.type` hoặc `ro.debuggable` mà không thêm các trường lạ của Xiaomi.
 2. Quá trình lọc sử dụng lệnh `sed` tương thích chuẩn POSIX/Toybox:
    - Ghi kết quả vào `$MODPATH/compat_build.prop`.
 3. Tệp này được cấp quyền đọc `0644` và gán nhãn SELinux `u:object_r:system_file:s0`.
@@ -129,7 +129,7 @@ SuSFS (Suspicious Filesystem Hook) cung cấp khả năng can thiệp cấp kern
 ### Kỹ thuật `open_redirect`
 Lệnh `ksu_susfs add_open_redirect /system/build.prop <target> 3`:
 - Chặn syscall `sys_openat` trong kernel khi tiến trình cố gắng mở `/system/build.prop`.
-- **UID Scheme 3:** Kernel kiểm tra UID của tiến trình gọi. Nếu `UID >= 10000` (ứng dụng không gian người dùng), kernel sẽ trả về tệp `compat_build.prop`.
+- **UID Scheme 3:** Kernel kiểm tra UID của tiến trình gọi. Nếu `UID >= 10000` (ứng dụng không gian người dùng), kernel sẽ trả về tệp `hyperos_compat_build.prop`.
 - Các daemon hệ thống (`init`, `vold`, `rild`) có `UID < 10000` tiếp tục đọc tệp gốc mà không bị ảnh hưởng.
 
 ---
@@ -213,8 +213,8 @@ Khi người dùng thực hiện gỡ cài đặt module qua trình quản lý r
 - `uninstall.sh` được kích hoạt tự động;
 - Xóa bỏ các quy tắc chuyển hướng trong `/data/adb/susfs4ksu/sus_open_redirect.txt`;
 - Xóa bỏ các đường dẫn cách ly trong `/data/adb/susfs4ksu/sus_path.txt`;
-- Xóa tệp tạm `compat_build.prop` và `clean_build.prop` khỏi `/mnt/vendor/` và `/data/adb/`;
-- Sau khi khởi động lại, các runtime rule do module quản lý được gỡ bỏ; các thay đổi do module khác hoặc do người dùng tạo ra không thuộc phạm vi rollback.
+- Xóa file runtime `hyperos_compat_build.prop` do module sở hữu khỏi thư mục SuSFS;
+- **Khuyến nghị khởi động lại** sau khi gỡ module để các runtime rule và resetprop changes được giải phóng; các thay đổi do module khác hoặc do người dùng tạo ra không thuộc phạm vi rollback.
 
 ---
 
@@ -224,8 +224,8 @@ Khi người dùng thực hiện gỡ cài đặt module qua trình quản lý r
 
 ```bash
 # 1. Kiểm tra trạng thái thuộc tính đã chuẩn hóa
-su -c "getprop ro.build.type"      # Mong đợi: user
-su -c "getprop ro.debuggable"      # Mong đợi: 0
+su -c "getprop ro.build.type"      # Giá trị thực tế của ROM
+su -c "getprop ro.debuggable"      # Giá trị thực tế của ROM
 su -c "getprop ro.build.host"      # Kiểm tra giá trị hiện tại của thiết bị
 
 # 2. Kiểm tra SuSFS open_redirect
@@ -241,7 +241,7 @@ su -c "ksu_susfs show sus_path"
 
 | Biến thể ROM / Hệ Điều Hành | Phiên bản Android | Hồ Sơ Chuẩn Hóa | Trạng Thái SuSFS Kernel | Đánh Giá Vận Hành |
 |---|---|---|---|---|
-| **Xiaomi.eu HyperOS 1.0** | Android 14 | HyperOS Profile | Tương thích (nếu kernel có SuSFS) | Ổn định |
+| **Xiaomi.eu HyperOS 1.0** | Android 14 | HyperOS Profile | Tương thích (nếu kernel có SuSFS) | Chưa có dữ liệu kiểm thử đại diện |
 | **Xiaomi.eu HyperOS 2.0** | Android 15 | HyperOS Profile | Tương thích (nếu kernel có SuSFS) | Ổn định |
 | **Xiaomi.eu HyperOS 3.0** | Android 15 / 16 | HyperOS Profile | Tương thích (Wild Kernel / ShirkNeko) | Đã thử nghiệm thực tế (POCO F5 Pro) |
 | **HyperTN / TN ToolBox** | Android 14 / 15 | HyperOS Profile | Tương thích | Ổn định |
