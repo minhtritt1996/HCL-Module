@@ -31,7 +31,5 @@ rm -f "$MODDIR/owned_open_redirect.txt"
 rm -f "$MODDIR/compat_isolated_components.txt"
 rm -f "$MODDIR/detected_paths.txt"
 
-rm -f /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-rm -f /mnt/vendor/susfs4ksu/clean_build.prop 2>/dev/null || true
-rm -f /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-rm -f /data/adb/susfs4ksu/clean_build.prop 2>/dev/null || true
+rm -f /mnt/vendor/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+rm -f /data/adb/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
