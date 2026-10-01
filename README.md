@@ -141,7 +141,6 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 ### 1. Chuẩn bị môi trường nền tảng
 Cài đặt các module nền tảng qua trình quản lý root:
 - **Zygisk Next** — [GitHub Releases](https://github.com/LSPosed/ZygiskNext/releases)
-- **HMA-OSS** — [GitHub Releases](https://github.com/frknkrc44/HMA-OSS/releases)
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
 ### 2. Cài đặt HyperOS & AOSP Compatibility Layer
@@ -158,8 +157,7 @@ Cài đặt các module nền tảng qua trình quản lý root:
 
 ## ⚙️ Cấu Hình Môi Trường Ứng Dụng
 
-Module không yêu cầu danh sách ứng dụng riêng để hoạt động.
-Các kiểm thử ứng dụng bên thứ ba nên được thực hiện trên cấu hình root/ROM thực tế của người dùng và không được xem là một phần của runtime module.
+Module không yêu cầu danh sách ứng dụng riêng để hoạt động. Các kiểm thử ứng dụng bên thứ ba chỉ là kiểm thử tương thích; dự án không cam kết vượt qua cơ chế bảo mật hoặc attestation của ứng dụng.
 
 ---
 
@@ -172,6 +170,29 @@ Các kiểm thử ứng dụng bên thứ ba nên được thực hiện trên c
 | **Debug state** | Giá trị thực tế của ROM | `su -c "getprop ro.build.type"` |
 | **Thuộc tính ROM mod** | Đã được chuẩn hóa | `su -c "getprop \| grep -iE 'xiaomi\.eu\|hypertn\|eliterom'"` |
 | **Thành phần phụ trợ ROM** | Đã được cách ly qua SuSFS | `su -c "ls /product/priv-app/XiaomiEUExt"` → báo không tồn tại |
+
+---
+
+## 🔍 Kiểm Tra Sau Khi Cài
+
+```bash
+su -c "getprop ro.product.mod_device"
+su -c "getprop ro.build.host"
+su -c "getprop ro.build.type"
+su -c "getprop ro.debuggable"
+su -c "getprop ro.boot.verifiedbootstate"
+su -c "ls -l /data/adb/susfs4ksu/hyperos_compat_build.prop 2>/dev/null"
+```
+
+Nếu dùng SuSFS:
+
+```bash
+su -c "ksu_susfs show version"
+su -c "ksu_susfs show open_redirect"
+su -c "ksu_susfs show sus_path"
+```
+
+Sau khi gỡ module, hãy **khởi động lại thiết bị** để giải phóng runtime rules và resetprop changes.
 
 ---
 
