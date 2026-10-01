@@ -1,0 +1,41 @@
+name: Validate
+
+on:
+  push:
+    branches: ["main", "test"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  shell-syntax:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate shell syntax
+        shell: bash
+        run: |
+          set -euo pipefail
+          find module -type f -name '*.sh' -print0 | xargs -0 -r -n1 sh -n
+
+      - name: Validate module metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f module/module.prop
+          grep -q '^id=hyperos_compat$' module/module.prop
+          grep -q '^version=v1\.4\.0$' module/module.prop
+          grep -q '^versionCode=140$' module/module.prop
+
+      - name: Check forbidden legacy markers
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE 'com\.vnid|TrickyStore|Promon|spoofBuild|spoofProps|ro\.boot\.flash\.locked|ro\.boot\.vbmeta\.device_state|hide_custom_rom' module README.md SECURITY.md DISCLAIMER.md docs; then
+            echo "Forbidden legacy/security-state marker found."
+            exit 1
+          fi
