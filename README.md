@@ -98,11 +98,11 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 ┌──────────────────────────────────────────────────────────────────┐
 │  Lớp 1: System Property Normalization (RAM, resetprop)           │
 │  • Tự động nhận diện môi trường: HyperOS Profile vs AOSP Profile  │
-│  • HyperOS: Chuẩn hóa ro.build.host (c5-build-66), dọn dẹp       │
-│    ro.xiaomi.eu.*, ro.hypertn.*, ro.eliterom.*, bảo toàn mod_device│
-│  • AOSP/LineageOS: Dọn dẹp ro.lineage.*, ro.crdroid.*, modversion │
-│    mà KHÔNG cấy thuộc tính Xiaomi hay can thiệp vào máy chủ gốc  │
-│  • Đồng bộ cờ phát hành chuẩn: ro.build.type=user, ro.debuggable=0 │
+│  • HyperOS: Chuẩn hóa ro.product.mod_device và dọn metadata ROM │
+│    tùy biến; không ép build host hoặc security state              │
+│  • AOSP/LineageOS: Dọn metadata nhận diện ROM tùy biến           │
+│    mà không cấy thuộc tính Xiaomi                                │
+│  • ro.build.type / ro.debuggable giữ nguyên theo ROM thực tế      │
 ├──────────────────────────────────────────────────────────────────┤
 │  Lớp 2: Compatibility File View (SuSFS open_redirect)            │
 │  • Tạo compat_build.prop đã được chuẩn hóa tự động khi cài đặt   │
@@ -131,7 +131,6 @@ Dự án giữ vững kiến trúc 3 lớp kỹ thuật lõi, vận hành tự �
 | **Zygisk** | Zygisk Next (khuyến nghị) hoặc Magisk Zygisk | Cách ly môi trường thực thi ứng dụng |
 | **Kernel SuSFS** *(Tùy chọn)* | Kernel hỗ trợ SuSFS (Wild Kernel, ShirkNeko...) | Cung cấp Lớp 2 (Chuyển hướng tệp) và Lớp 3 (Cách ly thành phần) |
 | **susfs4ksu** | Module susfs4ksu (nếu dùng kernel SuSFS) | Tự động đồng bộ các quy tắc cấu hình kernel |
-| **HMA-OSS** | Hide My Applist (bản mã nguồn mở Zygisk) | Quản lý danh sách ứng dụng theo cơ chế Whitelist |
 | **Hệ điều hành** | Xiaomi HyperOS 1.0 – 3.0 / AOSP / LineageOS / crDroid (Android 12 – 16) | Tự động nhận diện hồ sơ ROM phù hợp |
 
 ---
