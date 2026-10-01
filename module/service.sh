@@ -1,173 +1,122 @@
 #!/system/bin/sh
 MODDIR=${0%/*}
 
-# Chi chay sau khi he thong da boot xong hoan toan vao Launcher (bao ve tuyet doi cho modem)
+# Run after Android reports boot completion.
 until [ "$(getprop sys.boot_completed)" = "1" ]; do
     sleep 1
 done
 
-# 1. Tim cong cu resetprop
-RESETPROP="resetprop"
-if [ -f "/data/adb/ksu/bin/resetprop" ]; then
+# Locate resetprop when available.
+RESETPROP=""
+if [ -x "/data/adb/ksu/bin/resetprop" ]; then
     RESETPROP="/data/adb/ksu/bin/resetprop"
-elif [ -f "/data/adb/ap/bin/resetprop" ]; then
+elif [ -x "/data/adb/ap/bin/resetprop" ]; then
     RESETPROP="/data/adb/ap/bin/resetprop"
-elif [ -f "/data/adb/magisk/magisk" ]; then
+elif [ -x "/data/adb/magisk/magisk" ]; then
     RESETPROP="/data/adb/magisk/magisk --resetprop"
+elif command -v resetprop >/dev/null 2>&1; then
+    RESETPROP="resetprop"
 fi
 
-# 2. Xac dinh thiet bi va moi truong he dieu hanh (HyperOS vs AOSP)
 ROM_ENV="aosp"
 if [ -f "$MODDIR/rom_env.txt" ]; then
-    ROM_ENV=$(cat "$MODDIR/rom_env.txt" | tr -d ' \r\n')
-elif [ -n "$(getprop ro.miui.ui.version.name)" ] || \
-     [ -n "$(getprop ro.miui.version.code_time)" ] || \
-     [ -n "$(getprop ro.miui.ui.version.code)" ] || \
-     [ -f "/system/framework/framework-ext-res.apk" ] || \
-     [ -d "/system/priv-app/miui" ] || \
-     [ -d "/system/priv-app/MiuiHome" ]; then
-    ROM_ENV="hyperos"
+    ROM_ENV=$(tr -d ' \r\n' < "$MODDIR/rom_env.txt")
 fi
 
-HYPEROS_DEVICE=$(getprop ro.product.device)
-[ -z "$HYPEROS_DEVICE" ] && HYPEROS_DEVICE=$(getprop ro.product.name)
-[ -z "$HYPEROS_DEVICE" ] && HYPEROS_DEVICE=$(getprop ro.build.product)
+DEVICE=$(getprop ro.product.device)
+[ -z "$DEVICE" ] && DEVICE=$(getprop ro.product.name)
+[ -z "$DEVICE" ] && DEVICE=$(getprop ro.build.product)
 
-# 3. Chuan hoa properties trong bo nho RAM
-if [ "$ROM_ENV" = "hyperos" ]; then
-    HYPEROS_RAW_MOD_DEVICE=$(getprop ro.product.mod_device)
-    if echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_in_global"; then
-        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_in_global"
-    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_ru_global"; then
-        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_ru_global"
-    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_eea_global"; then
-        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_eea_global"
-    elif echo "$HYPEROS_RAW_MOD_DEVICE" | grep -qi "_global"; then
-        HYPEROS_NORM_MOD_DEVICE="${HYPEROS_DEVICE}_global"
-    elif [ -n "$HYPEROS_RAW_MOD_DEVICE" ]; then
-        HYPEROS_NORM_MOD_DEVICE=$(echo "$HYPEROS_RAW_MOD_DEVICE" | sed -E 's/_(xiaomieu|eu|hypertn|tn|elite|eliterom|mipa|pulse|mod|custom)//Ig')
-        [ -z "$HYPEROS_NORM_MOD_DEVICE" ] && HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+# Apply only local compatibility metadata. Bootloader, Verified Boot,
+# secure-boot and OEM-unlock state are deliberately left untouched.
+if [ -n "$RESETPROP" ]; then
+    if [ "$ROM_ENV" = "hyperos" ]; then
+        RAW_MOD_DEVICE=$(getprop ro.product.mod_device)
+        NORM_MOD_DEVICE=""
+
+        case "$RAW_MOD_DEVICE" in
+            *_in_global) NORM_MOD_DEVICE="${DEVICE}_in_global" ;;
+            *_ru_global) NORM_MOD_DEVICE="${DEVICE}_ru_global" ;;
+            *_eea_global) NORM_MOD_DEVICE="${DEVICE}_eea_global" ;;
+            *_global) NORM_MOD_DEVICE="${DEVICE}_global" ;;
+            "")
+                NORM_MOD_DEVICE="$DEVICE"
+                ;;
+            *)
+                NORM_MOD_DEVICE=$(printf '%s\n' "$RAW_MOD_DEVICE" | sed -E 's/_(xiaomieu|eu|hypertn|tn|elite|eliterom|mipa|pulse|mod|custom)//Ig')
+                [ -z "$NORM_MOD_DEVICE" ] && NORM_MOD_DEVICE="$DEVICE"
+                ;;
+        esac
+
+        # Normalize only the ROM variant identifier; do not synthesize
+        # boot/security state or a build-server identity.
+        [ -n "$NORM_MOD_DEVICE" ] &&             $RESETPROP -n -v ro.product.mod_device "$NORM_MOD_DEVICE" 2>/dev/null || true
+
+        for prop in $(getprop | grep -iE 'xiaomi\.eu|developerid|hypertn|eliterom|mipa|pulse' | sed -E 's/^\[([^]]+)\].*/\1/'); do
+            [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
+        done
     else
-        HYPEROS_NORM_MOD_DEVICE="$HYPEROS_DEVICE"
+        for prop in $(getprop | grep -iE 'lineage\.(build|version|device|display)|crdroid|evolution|pixelexperience|havoc|derp|modversion' | sed -E 's/^\[([^]]+)\].*/\1/'); do
+            [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
+        done
     fi
-
-    # Chuan hoa may chu build goc Xiaomi va mod_device cua Xiaomi
-    $RESETPROP -n -v ro.build.host c5-build-66.bj.xiaomi.com
-    [ -n "$HYPEROS_NORM_MOD_DEVICE" ] && $RESETPROP -n -v ro.product.mod_device "$HYPEROS_NORM_MOD_DEVICE"
-
-    # Quet dong va loai bo thuoc tinh chu ky ROM mod Xiaomi
-    for prop in $(getprop | grep -iE 'xiaomi\.eu|developerid|hypertn|eliterom|mipa|pulse' | sed -E 's/^\[([^]]+)\].*/\1/'); do
-        [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
-    done
-else
-    # AOSP Profile: Loai bo cac property rò rỉ của ROM AOSP tuy bien ma khong chen thuoc tinh Xiaomi
-    for prop in $(getprop | grep -iE 'lineage\.(build|version|device|display)|crdroid|evolution|pixelexperience|havoc|derp|modversion' | sed -E 's/^\[([^]]+)\].*/\1/'); do
-        [ -n "$prop" ] && $RESETPROP -n -v -d "$prop" 2>/dev/null || true
-    done
 fi
 
-# Xu ly rom userdebug / debuggable chung cho moi loai ROM
-[ "$(getprop ro.build.type)" = "userdebug" ] && $RESETPROP -n -v ro.build.type user
-[ "$(getprop ro.debuggable)" = "1" ] && $RESETPROP -n -v ro.debuggable 0
-
-# Do not synthesize bootloader / Verified Boot state.
-# These values must continue to reflect the real device state.
-
-# 4. Chuan bi compat_build.prop cho SuSFS
-mkdir -p /mnt/vendor/susfs4ksu 2>/dev/null
+# Prepare the compatibility file for optional SuSFS integration.
 TARGET_COMPAT_PROP=""
 SOURCE_PROP_FILE=""
-
 if [ -f "$MODDIR/compat_build.prop" ]; then
     SOURCE_PROP_FILE="$MODDIR/compat_build.prop"
-elif [ -f "$MODDIR/clean_build.prop" ]; then
-    SOURCE_PROP_FILE="$MODDIR/clean_build.prop"
 fi
 
 if [ -n "$SOURCE_PROP_FILE" ]; then
-    cp -f "$SOURCE_PROP_FILE" /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-    chmod 644 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-    chcon u:object_r:system_file:s0 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-    # Legacy link
-    cp -f "$SOURCE_PROP_FILE" /mnt/vendor/susfs4ksu/clean_build.prop 2>/dev/null || true
+    mkdir -p /mnt/vendor/susfs4ksu 2>/dev/null || true
+    if [ -d "/mnt/vendor/susfs4ksu" ]; then
+        cp -f "$SOURCE_PROP_FILE" /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
+        chmod 0644 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
+        chcon u:object_r:system_file:s0 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
+        TARGET_COMPAT_PROP="/mnt/vendor/susfs4ksu/compat_build.prop"
+    elif [ -d "/data/adb/susfs4ksu" ]; then
+        cp -f "$SOURCE_PROP_FILE" /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
+        chmod 0644 /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
+        TARGET_COMPAT_PROP="/data/adb/susfs4ksu/compat_build.prop"
+    fi
 fi
 
-if [ -f "/mnt/vendor/susfs4ksu/compat_build.prop" ]; then
-    TARGET_COMPAT_PROP="/mnt/vendor/susfs4ksu/compat_build.prop"
-elif [ -f "/data/adb/susfs4ksu/compat_build.prop" ]; then
-    TARGET_COMPAT_PROP="/data/adb/susfs4ksu/compat_build.prop"
-elif [ -f "/mnt/vendor/susfs4ksu/clean_build.prop" ]; then
-    TARGET_COMPAT_PROP="/mnt/vendor/susfs4ksu/clean_build.prop"
-elif [ -f "/data/adb/susfs4ksu/clean_build.prop" ]; then
-    TARGET_COMPAT_PROP="/data/adb/susfs4ksu/clean_build.prop"
-elif [ -n "$SOURCE_PROP_FILE" ]; then
-    TARGET_COMPAT_PROP="$SOURCE_PROP_FILE"
-fi
-
-# 5. Kich hoat quy tac SuSFS (Chi ap dung cho app nguoi dung uid >= 10000, khong dong vao system daemons)
+# Detect SuSFS without requiring it.
 SUSFS_BIN=""
-if [ -f "/data/adb/ksu/bin/ksu_susfs" ]; then
-    SUSFS_BIN="/data/adb/ksu/bin/ksu_susfs"
-elif [ -f "/data/adb/ksu/bin/susfs" ]; then
-    SUSFS_BIN="/data/adb/ksu/bin/susfs"
-elif [ -f "/data/adb/ap/bin/ap_susfs" ]; then
-    SUSFS_BIN="/data/adb/ap/bin/ap_susfs"
-elif [ -f "/data/adb/ap/bin/susfs" ]; then
-    SUSFS_BIN="/data/adb/ap/bin/susfs"
-elif command -v ksu_susfs >/dev/null 2>&1; then
-    SUSFS_BIN="ksu_susfs"
-elif command -v ap_susfs >/dev/null 2>&1; then
-    SUSFS_BIN="ap_susfs"
-elif command -v susfs >/dev/null 2>&1; then
-    SUSFS_BIN="susfs"
-fi
-
-if [ -n "$SUSFS_BIN" ] && [ -x "$SUSFS_BIN" ] && [ -n "$($SUSFS_BIN show version 2>/dev/null)" ]; then
-    # Cach ly cac thanh phan ROM mod da phat hien dong
-    COMPONENT_LIST=""
-    if [ -f "$MODDIR/compat_isolated_components.txt" ]; then
-        COMPONENT_LIST="$MODDIR/compat_isolated_components.txt"
-    elif [ -f "$MODDIR/detected_paths.txt" ]; then
-        COMPONENT_LIST="$MODDIR/detected_paths.txt"
+for candidate in     /data/adb/ksu/bin/ksu_susfs     /data/adb/ksu/bin/susfs     /data/adb/ap/bin/ap_susfs     /data/adb/ap/bin/susfs; do
+    if [ -x "$candidate" ]; then
+        SUSFS_BIN="$candidate"
+        break
     fi
+done
 
-    SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
-    OWNED_PATHS="$MODDIR/owned_sus_paths.txt"
-    [ -d "/data/adb/susfs4ksu" ] && touch "$SUS_PATH_FILE" 2>/dev/null
-
-
-    if [ -n "$COMPONENT_LIST" ]; then
-        : > "$OWNED_PATHS"
-        while read -r p; do
-            [ -z "$p" ] && continue
-            if [ -e "$p" ]; then
-                $SUSFS_BIN add_sus_path "$p" 2>/dev/null || true
-                if [ -f "$SUS_PATH_FILE" ]; then
-                    grep -Fxq "$p" "$SUS_PATH_FILE" 2>/dev/null || echo "$p" >> "$SUS_PATH_FILE"
-                fi
-                echo "$p" >> "$OWNED_PATHS"
-            fi
-        done < "$COMPONENT_LIST"
-    fi
-
-    # Cach ly addon.d/ neu ton tai (co che OTA survival dac thu cua AOSP va Custom ROM)
-    for addond in "/system/addon.d" "/system/system/addon.d" "/system_ext/addon.d" "/product/addon.d"; do
-        if [ -d "$addond" ] || [ -e "$addond" ]; then
-            $SUSFS_BIN add_sus_path "$addond" 2>/dev/null || true
-            if [ -f "$SUS_PATH_FILE" ]; then
-                grep -Fxq "$addond" "$SUS_PATH_FILE" 2>/dev/null || echo "$addond" >> "$SUS_PATH_FILE"
-            fi
-            for script in "$addond"/*; do
-                if [ -e "$script" ]; then
-                    $SUSFS_BIN add_sus_path "$script" 2>/dev/null || true
-                    if [ -f "$SUS_PATH_FILE" ]; then
-                        grep -Fxq "$script" "$SUS_PATH_FILE" 2>/dev/null || echo "$script" >> "$SUS_PATH_FILE"
-                    fi
-                fi
-            done
+if [ -z "$SUSFS_BIN" ]; then
+    for candidate in ksu_susfs ap_susfs susfs; do
+        if command -v "$candidate" >/dev/null 2>&1; then
+            SUSFS_BIN="$candidate"
+            break
         fi
     done
+fi
 
-    # Redirect only the compatibility view for application UIDs.
-    # The target is recorded so uninstall can remove only this module's rule.
+if [ -n "$SUSFS_BIN" ] && [ -n "$TARGET_COMPAT_PROP" ]; then
+    if "$SUSFS_BIN" show version >/dev/null 2>&1; then
+        SUS_PATH_FILE="/data/adb/susfs4ksu/sus_path.txt"
+        OWNED_PATHS="$MODDIR/owned_sus_paths.txt"
+
+        if [ -f "$OWNED_PATHS" ] && [ -d "/data/adb/susfs4ksu" ]; then
+            touch "$SUS_PATH_FILE" 2>/dev/null || true
+            while IFS= read -r path; do
+                [ -n "$path" ] || continue
+                [ -e "$path" ] || continue
+                "$SUSFS_BIN" add_sus_path "$path" 2>/dev/null || true
+                grep -Fxq "$path" "$SUS_PATH_FILE" 2>/dev/null ||                     printf '%s\n' "$path" >> "$SUS_PATH_FILE"
+            done < "$OWNED_PATHS"
+        fi
+
+        "$SUSFS_BIN" add_open_redirect /system/build.prop "$TARGET_COMPAT_PROP" 3 2>/dev/null || true
+        printf '%s\n' "/system/build.prop $TARGET_COMPAT_PROP 1 3" > "$MODDIR/owned_open_redirect.txt"
+    fi
 fi
