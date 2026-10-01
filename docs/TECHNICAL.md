@@ -79,7 +79,7 @@ Trong các bản ROM tùy biến, các nhà phát triển thường điều ch�
 
 ## 3. Nhận Diện Môi Trường Thông Minh & Chuẩn Hóa Thuộc Tính (Smart Environment Detection & Normalization)
 
-Để đảm bảo an toàn tuyệt đối và tính tự nhiên của môi trường, module áp dụng cơ chế **Smart Environment Detection** trong cả `customize.sh` và `service.sh`:
+Để giữ hành vi nhất quán, module phát hiện môi trường trong `customize.sh` và lưu profile cho `service.sh` sử dụng:
 
 ```sh
 # Tự động nhận diện nhánh ROM
@@ -92,7 +92,7 @@ fi
 
 ### Hồ Sơ 1: HyperOS Profile
 Khi hoạt động trên môi trường Xiaomi HyperOS / MIUI:
-1. **Chuẩn hóa hạ tầng Xiaomi:** Khôi phục `ro.build.host` về máy chủ chính thức của Xiaomi (`c5-build-66.bj.xiaomi.com`).
+1. **Bảo toàn build metadata:** Không thay thế `ro.build.host` bằng một build server cố định. Module chỉ xử lý metadata ROM tùy biến cần thiết cho compatibility view.
 2. **Chuẩn hóa mã máy Xiaomi:** Khôi phục `ro.product.mod_device` về mã thương mại gốc (ví dụ: `mondrian_global`), giữ nguyên hậu tố phân vùng mạng (`_global`, `_eea_global`, `_in_global`) để bảo vệ kết nối radio/modem.
 3. **Làm sạch thuộc tính mod:** Tự động loại bỏ các thuộc tính chứa chữ ký: `ro.xiaomi.eu.*`, `ro.hypertn.*`, `ro.eliterom.*`, `ro.mipa.*`, `ro.pulse.*`, `developerid`.
 
@@ -104,9 +104,7 @@ Khi hoạt động trên môi trường AOSP thuần, LineageOS hoặc crDroid:
    - `ro.crdroid.version`, `ro.crdroid.build.version`, `ro.crdroid.device`
    - `ro.evolution.*`, `ro.pixelexperience.*`, `ro.havoc.*`, `ro.derp.*`
    - `ro.modversion`
-3. **Đồng bộ cờ sản xuất (Chung cho mọi môi trường):**
-   - Đưa `ro.build.type` về `user`.
-   - Đưa `ro.debuggable` về `0`.
+3. **Bảo toàn security state:** Module không thay đổi bootloader lock, Verified Boot, secure boot hoặc OEM-unlock state.
 
 ---
 
@@ -160,7 +158,7 @@ boot_completed = 1   service.sh kích hoạt           Bảo đảm toàn bộ h
 
 > [!IMPORTANT]
 > **Bài học về an toàn Modem (RIL Safety):**  
-> Việc can thiệp vào `build.prop` hoặc thực thi redirection trước khi modem partition sẵn sàng sẽ khiến tiến trình `rild` đọc sai cấu hình radio, gây ra hiện tượng **Modem Subsystem Restart (SSR)** dẫn đến bootloop. Bằng cách trì hoãn thực thi đến khi `sys.boot_completed=1` và áp dụng UID Scheme 3, module loại trừ hoàn toàn nguy cơ này.
+> Việc can thiệp vào `build.prop` hoặc thực thi redirection trước khi modem partition sẵn sàng có thể làm tăng rủi ro không tương thích. Module trì hoãn runtime processing đến `sys.boot_completed=1` để giảm khả năng race condition với các dịch vụ hệ thống; đây không phải là bảo đảm loại trừ hoàn toàn lỗi modem.
 
 ---
 
@@ -216,7 +214,7 @@ Khi người dùng thực hiện gỡ cài đặt module qua trình quản lý r
 - Xóa bỏ các quy tắc chuyển hướng trong `/data/adb/susfs4ksu/sus_open_redirect.txt`;
 - Xóa bỏ các đường dẫn cách ly trong `/data/adb/susfs4ksu/sus_path.txt`;
 - Xóa tệp tạm `compat_build.prop` và `clean_build.prop` khỏi `/mnt/vendor/` và `/data/adb/`;
-- Sau khi khởi động lại, kernel và framework trở về trạng thái nguyên bản 100%.
+- Sau khi khởi động lại, các runtime rule do module quản lý được gỡ bỏ; các thay đổi do module khác hoặc do người dùng tạo ra không thuộc phạm vi rollback.
 
 ---
 
@@ -228,7 +226,7 @@ Khi người dùng thực hiện gỡ cài đặt module qua trình quản lý r
 # 1. Kiểm tra trạng thái thuộc tính đã chuẩn hóa
 su -c "getprop ro.build.type"      # Mong đợi: user
 su -c "getprop ro.debuggable"      # Mong đợi: 0
-su -c "getprop ro.build.host"      # Mong đợi: c5-build-66.bj.xiaomi.com
+su -c "getprop ro.build.host"      # Kiểm tra giá trị hiện tại của thiết bị
 
 # 2. Kiểm tra SuSFS open_redirect
 su -c "ksu_susfs show open_redirect"
