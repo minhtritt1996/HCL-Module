@@ -9,11 +9,11 @@
     <img src="https://img.shields.io/badge/GitHub-Kho_Mã_Nguồn-181717?style=for-the-badge&logo=github&logoColor=white" alt="Truy cập Repo" />
   </a>
   <a href="https://github.com/minhtritt1996/HCL-Module/releases/latest">
-    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.3.8-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
+    <img src="https://img.shields.io/badge/Tải_Về_Mới_Nhất-v1.4.0-2ea44f?style=for-the-badge&logo=github&logoColor=white" alt="Tải về mới nhất" />
   </a>
 </p>
 
-[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.3.8-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
+[![Phiên bản](https://img.shields.io/badge/phiên_bản-v1.4.0-blue?style=flat-square)](https://github.com/minhtritt1996/HCL-Module/releases)
 [![Giấy phép](https://img.shields.io/badge/giấy_phép-MIT-green?style=flat-square)](LICENSE)
 [![Disclaimer](https://img.shields.io/badge/pháp_lý-Disclaimer-yellow?style=flat-square)](DISCLAIMER.md)
 [![Security](https://img.shields.io/badge/bảo_mật-Security_Boundaries-blueviolet?style=flat-square)](SECURITY.md)
@@ -145,34 +145,21 @@ Cài đặt các module nền tảng qua trình quản lý root:
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
 ### 2. Cài đặt HyperOS & AOSP Compatibility Layer
-1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.3.6.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
+1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.4.0.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài đặt từ bộ nhớ**.
 3. Chọn gói ZIP vừa tải và tiến hành cài đặt.
 4. Khởi động lại thiết bị.
 
 > [!NOTE]
-> **Nâng cấp từ phiên bản tiền nhiệm (v1.2.x / v1.3.x):**
-> Module tích hợp sẵn bộ chuyển đổi thông minh (Migration Logic). Khi cài đặt bản `v1.3.6`, hệ thống sẽ tự động phát hiện, vô hiệu hóa và dọn dẹp cấu hình của module cũ, đồng thời tự động bảo toàn danh sách cấu hình SuSFS trên mọi lần khởi động lại máy.
+> **Nâng cấp từ phiên bản tiền nhiệm:**
+> Bản v1.4 không tự động xóa module cũ. Hãy xác nhận module mới hoạt động trước khi gỡ module `xiaomieu_vneid_cloak` bằng root manager.
 
 ---
 
 ## ⚙️ Cấu Hình Môi Trường Ứng Dụng
 
-### Quản lý danh sách ứng dụng với HMA-OSS (Whitelist)
-
-Để tối ưu hóa sự tương thích và tránh các ứng dụng đọc danh sách phần mềm không liên quan:
-1. Mở HMA-OSS → Chọn ứng dụng cần cấu hình kiểm thử → Bật **Chế độ Danh sách trắng (Whitelist Mode)**.
-2. Áp dụng các mẫu (Presets): `Custom ROM`, `Root Apps`, `Xposed`, `Dev Options`.
-3. **Thêm vào danh sách ứng dụng được phép thấy (Extra App List):**
-   - `com.google.android.webview`
-   - `com.google.android.gms`
-   - `com.android.vending`
-
-### Lưu ý về Xác thực KeyStore Phần Cứng
-
-Các ứng dụng bảo mật cao (ngân hàng số, chứng thư điện tử) dựa trên cơ chế đối soát khóa phần cứng (Hardware-backed KeyStore) liên kết trực tiếp với TEE của vi xử lý:
-- Không nên can thiệp hoặc áp dụng các chứng chỉ keybox ảo lên các ứng dụng này, vì việc giả lập khóa không khớp với phần cứng thực tế có thể dẫn đến lỗi xác thực khóa (`KeyPermanentlyInvalidatedException`).
-- Giữ nguyên trạng thái phần cứng tự nhiên kết hợp với lớp chuẩn hóa thuộc tính của module là giải pháp an toàn và ổn định nhất.
+Module không yêu cầu HMA-OSS, TrickyStore hoặc danh sách ứng dụng riêng để hoạt động.
+Các kiểm thử ứng dụng bên thứ ba nên được thực hiện trên cấu hình root/ROM thực tế của người dùng và không được xem là một phần của runtime module.
 
 ---
 
@@ -181,8 +168,8 @@ Các ứng dụng bảo mật cao (ngân hàng số, chứng thư điện tử) 
 | Mục kiểm tra | Trạng thái tiêu chuẩn | Lệnh kiểm tra qua Terminal / ADB |
 |---|---|---|
 | **Trạng thái SELinux** | `Enforcing` | `su -c "getenforce"` |
-| **Máy chủ Build** | Máy chủ chính thức Xiaomi | `su -c "getprop ro.build.host"` |
-| **Cờ kiểm thử (Debug)** | `ro.debuggable=0`, `ro.build.type=user` | `su -c "getprop ro.build.type"` |
+| **Build metadata** | Giá trị thực tế của ROM | `su -c "getprop ro.build.host"` |
+| **Debug state** | Giá trị thực tế của ROM | `su -c "getprop ro.build.type"` |
 | **Thuộc tính ROM mod** | Đã được chuẩn hóa | `su -c "getprop \| grep -iE 'xiaomi\.eu\|hypertn\|eliterom'"` |
 | **Thành phần phụ trợ ROM** | Đã được cách ly qua SuSFS | `su -c "ls /product/priv-app/XiaomiEUExt"` → báo không tồn tại |
 
@@ -192,7 +179,7 @@ Các ứng dụng bảo mật cao (ngân hàng số, chứng thư điện tử) 
 
 | Thiết bị | Codename | Hệ điều hành & ROM | Môi trường Root | Kernel SuSFS | Trạng thái kiểm thử tương thích |
 |---|---|---|---|---|---|
-| **POCO F5 Pro** | `mondrian` | Xiaomi.eu HyperOS 3.0 (Android 15) | KernelSU + Wild Kernel | Có | **Tương thích hoàn toàn** (Định danh điện tử, Ngân hàng số, Google Services) |
+| **POCO F5 Pro** | `mondrian` | Xiaomi.eu HyperOS 3.0 (Android 15) | KernelSU + Wild Kernel | Có | **Đã kiểm thử thực tế** |
 
 ---
 
