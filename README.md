@@ -158,7 +158,7 @@ Cài đặt các module nền tảng qua trình quản lý root:
 
 ## ⚙️ Cấu Hình Môi Trường Ứng Dụng
 
-Module không yêu cầu HMA-OSS, TrickyStore hoặc danh sách ứng dụng riêng để hoạt động.
+Module không yêu cầu danh sách ứng dụng riêng để hoạt động.
 Các kiểm thử ứng dụng bên thứ ba nên được thực hiện trên cấu hình root/ROM thực tế của người dùng và không được xem là một phần của runtime module.
 
 ---
