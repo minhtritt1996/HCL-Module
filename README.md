@@ -143,7 +143,7 @@ Cài đặt các module nền tảng qua trình quản lý root:
 - **susfs4ksu** — [GitHub Releases](https://github.com/sidex15/susfs4ksu-module) *(nếu dùng kernel có hỗ trợ SuSFS)*
 
 ### 2. Cài đặt HyperOS & AOSP Compatibility Layer
-1. Tải bản phát hành mới nhất: [`HyperOS-Compatibility-Layer-v1.4.0.zip`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
+1. Tải bản phát hành mới nhất: [`Tại đây`](https://github.com/minhtritt1996/HCL-Module/releases/latest)
 2. Mở KernelSU / APatch / Magisk Manager → **Modules** → **Cài đặt từ bộ nhớ**.
 3. Chọn gói ZIP vừa tải và tiến hành cài đặt.
 4. Khởi động lại thiết bị.
