@@ -59,6 +59,20 @@ if [ -n "$RESETPROP" ]; then
         done
     fi
 
+    # Normalize partition fingerprints and model consistency
+    FP=$(getprop ro.build.fingerprint)
+    if [ -n "$FP" ]; then
+        for part in system system_ext product vendor odm bootimage vendor_dlkm; do
+            $RESETPROP -n -v "ro.${part}.build.fingerprint" "$FP" 2>/dev/null || true
+        done
+    fi
+    $RESETPROP -n -v ro.build.product "$DEVICE" 2>/dev/null || true
+    $RESETPROP -n -v ro.build.flavor "${DEVICE}-user" 2>/dev/null || true
+    $RESETPROP -n -v ro.product.product.model 23013PC75G 2>/dev/null || true
+    $RESETPROP -n -v ro.product.vendor_dlkm.model 23013PC75G 2>/dev/null || true
+    $RESETPROP -n -v ro.vendor.qti.va_aosp.support 0 2>/dev/null || true
+    $RESETPROP --delete vendor.miwild.enabled 2>/dev/null || true
+
     # Normalize device integrity and bootloader state
     P_FLASH="ro.boot.flash"
     P_VBMETA="ro.boot.vbmeta"
@@ -140,7 +154,15 @@ if [ -n "$SUSFS_BIN" ] && [ -n "$TARGET_COMPAT_PROP" ]; then
             grep -Fxq "$REDIRECT_LINE" /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || \
                 printf '%s\n' "$REDIRECT_LINE" >> /data/adb/susfs4ksu/sus_open_redirect.txt 2>/dev/null || true
         fi
+
+        # Kernel uname spoofing to match ROM build date and clean custom kernel flags
+        "$SUSFS_BIN" set_uname '5.10.209-android12-9-ge98db5ff32ca' '#1 SMP PREEMPT Mon Jun 1 11:00:00 UTC 2026' 2>/dev/null || true
     fi
+fi
+
+# Reload HMA configuration if installed
+if [ -x "/system/bin/content" ] || command -v content >/dev/null 2>&1; then
+    content call --uri content://org.frknkrc44.hma_oss.ServiceProvider --method reloadConfigFromFile >/dev/null 2>&1 || true
 fi
 
 # Harmonize runtime attestation configuration with tricky_store / AlwaysStrong

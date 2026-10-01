@@ -61,6 +61,12 @@ if [ -n "$SRC_PROP" ]; then
             -e '/^ro\.xiaomi\.eu\./d' \
             -e '/^ro\.\(tn\|hypertn\|eliterom\|mipa\|pulse\)\./d' \
             -e '/^ro\.modversion=/d' \
+            -e 's|qti/missi/missi|Redmi/mondrian/mondrian|g' \
+            -e 's|missi-user|mondrian-user|g' \
+            -e 's|ro\.build\.product=missi|ro.build.product=mondrian|g' \
+            -e 's|missi|mondrian|g' \
+            -e 's|net\.bt\.name=Android|net.bt.name=POCO F5 Pro|g' \
+            -e 's|ro\.vendor\.qti\.va_aosp\.support=1|ro.vendor.qti.va_aosp.support=0|g' \
             "$SRC_PROP" > "$MODPATH/compat_build.prop"
     else
         sed \
@@ -187,6 +193,49 @@ if [ -f "$MODPATH/attest_sync.sh" ]; then
     sh "$MODPATH/attest_sync.sh"
     ui_print "  -> VNeID & Techcombank hardware attestation secured"
     ui_print "  -> Banking applications hardware keystore protected"
+fi
+
+# 5. Harmonize HMA OSS configuration if present
+HMA_CONFIG=$(ls -1 /data/misc/hide_my_applist_*/config.json 2>/dev/null | head -n 1)
+if [ -n "$HMA_CONFIG" ] && [ -f "$HMA_CONFIG" ]; then
+    ui_print "- Synchronizing package isolation templates..."
+    if command -v python3 >/dev/null 2>&1; then
+        python3 -c "
+import json
+try:
+    with open('$HMA_CONFIG', 'r') as f:
+        cfg = json.load(f)
+    scope = cfg.setdefault('scope', {})
+    for pkg in ['com.sacombank.ewallet', 'com.tpb.mb.gprsandroid']:
+        p_cfg = scope.setdefault(pkg, {
+            'useWhitelist': False,
+            'excludeSystemApps': False,
+            'hideInstallationSource': False,
+            'hideSystemInstallationSource': False,
+            'excludeTargetInstallationSource': False,
+            'invertActivityLaunchProtection': False,
+            'excludeVoldIsolation': False,
+            'restrictedZygotePermissions': [],
+            'applyTemplates': ['HIDE MY CUSTOM APP'],
+            'applyPresets': ['accessibility_apps', 'custom_rom', 'detector_apps', 'root_apps', 'shizuku_dhizuku', 'sus_apps', 'xposed'],
+            'applySettingTemplates': [],
+            'applySettingsPresets': ['accessibility', 'dev_options', 'input_method'],
+            'extraAppList': ['org.frknkrc44.hma_oss', 'com.termux', 'com.termux.x11', 'com.resukisu.resukisu', 'com.github.standardadb', 'eu.sisik.hackendebug', 'org.client.scrcpy', 'com.droidspaces.app', 'gr.nikolasspyr.integritycheck', 'eu.xiaomi.ext'],
+            'extraOppositeAppList': []
+        })
+        p_cfg['excludeSystemApps'] = False
+        extra = p_cfg.setdefault('extraAppList', [])
+        if 'eu.xiaomi.ext' not in extra:
+            extra.append('eu.xiaomi.ext')
+    with open('$HMA_CONFIG', 'w') as f:
+        json.dump(cfg, f, indent=2)
+except Exception:
+    pass
+" 2>/dev/null || true
+    fi
+    if [ -x "/system/bin/content" ] || command -v content >/dev/null 2>&1; then
+        content call --uri content://org.frknkrc44.hma_oss.ServiceProvider --method reloadConfigFromFile >/dev/null 2>&1 || true
+    fi
 fi
 
 set_perm "$MODPATH/service.sh" 0 0 0755

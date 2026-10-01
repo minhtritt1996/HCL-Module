@@ -20,6 +20,8 @@ while true; do
         grep -q -E "com\.vnpay\.bidv|com\.mbmobile|com\.VCB|com\.vietinbank\.ipay" "$TRICKY_DIR/target.txt" 2>/dev/null && NEED_FIX=1
         grep -q "^com\.v""nid$" "$TRICKY_DIR/target.txt" 2>/dev/null || NEED_FIX=1
         grep -q "^vn\.com\.techcombank\.bb\.app$" "$TRICKY_DIR/target.txt" 2>/dev/null || NEED_FIX=1
+        grep -q "^com\.tpb\.mb\.gprsandroid$" "$TRICKY_DIR/target.txt" 2>/dev/null || NEED_FIX=1
+        grep -q "^com\.sacombank\.ewallet$" "$TRICKY_DIR/target.txt" 2>/dev/null || NEED_FIX=1
 
         if [ "$NEED_FIX" -eq 1 ]; then
             if [ -f "$MODDIR/attest_sync.sh" ]; then

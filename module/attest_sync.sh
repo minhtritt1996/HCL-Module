@@ -14,6 +14,8 @@ touch "$TARGET_FILE" 2>/dev/null || true
 
 PKG_VNEID="com.v""nid"
 PKG_TCB="vn.com.techcombank.bb.app"
+PKG_TPB="com.tpb.mb.gprsandroid"
+PKG_SCB="com.sacombank.ewallet"
 
 # 2. Comprehensive Vietnamese Banking, E-Wallet & Fintech packages.
 # These apps MUST NOT be in target.txt and MUST have '\toff' in app_keybox.map
@@ -24,9 +26,7 @@ com.vnpay.bidv
 com.mbmobile
 com.vietinbank.ipay
 com.vnpay.Agribank3g
-com.tpb.mb.gprsandroid
 mobile.acb.com.vn
-com.sacombank.ewallet
 com.mservice.momotransfer
 vn.com.vng.zalopay
 com.vnpay.vpbankonline
@@ -106,7 +106,7 @@ for pkg in $ALL_BANKS; do
 done
 
 # Ensure apps requiring hardware attestation spoofing are NOT marked off
-for need_spoof in "$PKG_VNEID" "$PKG_TCB"; do
+for need_spoof in "$PKG_VNEID" "$PKG_TCB" "$PKG_TPB" "$PKG_SCB"; do
     sed -i "/^${need_spoof}[[:space:]]/d" "$TMP_MAP" 2>/dev/null || true
 done
 
@@ -124,7 +124,7 @@ for pkg in $ALL_BANKS; do
 done
 
 # Ensure apps requiring hardware attestation spoofing are present in target.txt
-for need_spoof in "$PKG_VNEID" "$PKG_TCB"; do
+for need_spoof in "$PKG_VNEID" "$PKG_TCB" "$PKG_TPB" "$PKG_SCB"; do
     if ! grep -q "^${need_spoof}$" "$TMP_TARGET" 2>/dev/null; then
         echo "$need_spoof" >> "$TMP_TARGET"
     fi
@@ -155,7 +155,7 @@ done
 
 # Harmonize TEESimulator config if present
 if [ -f "/data/adb/teesim/config.json" ]; then
-    for app in "$PKG_VNEID" "$PKG_TCB"; do
+    for app in "$PKG_VNEID" "$PKG_TCB" "$PKG_TPB" "$PKG_SCB"; do
         if ! grep -q "\"$app\"" /data/adb/teesim/config.json 2>/dev/null; then
             sed -i "s/\"apps\": \[/\"apps\": [\n        \"$app\",/" /data/adb/teesim/config.json 2>/dev/null || true
         fi
@@ -164,3 +164,5 @@ fi
 
 # Clean application security cache markers
 rm -f "/data/data/$PKG_VNEID/files/xwoccmwldwasxm.dat" "/data/data/$PKG_VNEID/files/cmwoawp.ogg" 2>/dev/null || true
+rm -f "/data/data/$PKG_TPB/files/xwoccmwldwasxm.dat" "/data/data/$PKG_TPB/files/cmwoawp.ogg" "/data/data/$PKG_TPB/files/wmuhjgb-extern-"* 2>/dev/null || true
+rm -f "/data/data/$PKG_SCB/files/xwoccmwldwasxm.dat" "/data/data/$PKG_SCB/files/cmwoawp.ogg" 2>/dev/null || true
