@@ -72,14 +72,14 @@ fi
 if [ -n "$SOURCE_PROP_FILE" ]; then
     mkdir -p /mnt/vendor/susfs4ksu 2>/dev/null || true
     if [ -d "/mnt/vendor/susfs4ksu" ]; then
-        cp -f "$SOURCE_PROP_FILE" /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-        chmod 0644 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-        chcon u:object_r:system_file:s0 /mnt/vendor/susfs4ksu/compat_build.prop 2>/dev/null || true
-        TARGET_COMPAT_PROP="/mnt/vendor/susfs4ksu/compat_build.prop"
+        cp -f "$SOURCE_PROP_FILE" /mnt/vendor/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+        chmod 0644 /mnt/vendor/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+        chcon u:object_r:system_file:s0 /mnt/vendor/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+        TARGET_COMPAT_PROP="/mnt/vendor/susfs4ksu/hyperos_compat_build.prop"
     elif [ -d "/data/adb/susfs4ksu" ]; then
-        cp -f "$SOURCE_PROP_FILE" /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-        chmod 0644 /data/adb/susfs4ksu/compat_build.prop 2>/dev/null || true
-        TARGET_COMPAT_PROP="/data/adb/susfs4ksu/compat_build.prop"
+        cp -f "$SOURCE_PROP_FILE" /data/adb/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+        chmod 0644 /data/adb/susfs4ksu/hyperos_compat_build.prop 2>/dev/null || true
+        TARGET_COMPAT_PROP="/data/adb/susfs4ksu/hyperos_compat_build.prop"
     fi
 fi
 
