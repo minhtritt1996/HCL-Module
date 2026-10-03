@@ -1,0 +1,17 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Generated build.prop (device-specific, not committed)
+module/clean_build.prop
+
+# IDE
+.vscode/
+.idea/
+
+# Release ZIPs
+*.zip

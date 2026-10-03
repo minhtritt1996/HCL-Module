@@ -1,0 +1,1658 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>HyperOS Compatibility Layer</title>
+  <style>
+    :root {
+      --bg: #121214;
+      --card-bg: #1c1c1f;
+      --card-border: #2c2c30;
+      --primary: #0a84ff;
+      --primary-hover: #0071e3;
+      --accent: #30d158;
+      --warning: #ffd60a;
+      --danger: #ff453a;
+      --text: #f5f5f7;
+      --text-muted: #8e8e93;
+      --border-radius: 12px;
+      --transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+      line-height: 1.5;
+      padding-bottom: 80px;
+    }
+    header {
+      background-color: rgba(24, 24, 28, 0.98);
+      backdrop-filter: blur(25px);
+      -webkit-backdrop-filter: blur(25px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 38px);
+      padding-bottom: 12px;
+      padding-left: 16px;
+      padding-right: 16px;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .header-title h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0;
+    }
+    .header-title span {
+      font-size: 11px;
+      color: var(--primary);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.2px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: rgba(48, 209, 88, 0.15);
+      color: var(--accent);
+      border: 1px solid rgba(48, 209, 88, 0.25);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge.warn {
+      background: rgba(255, 214, 10, 0.15);
+      color: var(--warning);
+      border-color: rgba(255, 214, 10, 0.25);
+    }
+    .badge.err {
+      background: rgba(255, 69, 58, 0.15);
+      color: var(--danger);
+      border-color: rgba(255, 69, 58, 0.25);
+    }
+
+    /* Tabs */
+    .tab-nav {
+      display: flex;
+      background: var(--card-bg);
+      margin: 12px 14px 0 14px;
+      border-radius: 12px;
+      padding: 3px;
+      border: 1px solid var(--card-border);
+      gap: 4px;
+    }
+    .tab-btn {
+      flex: 1 1 0;
+      min-width: 0;
+      padding: 8px 2px;
+      font-size: 12.5px;
+      font-weight: 500;
+      border: none;
+      background: none;
+      color: var(--text-muted);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+      white-space: nowrap;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      letter-spacing: 0;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 0 2px 8px rgba(10, 132, 255, 0.3);
+    }
+
+    /* Container */
+    .container {
+      padding: 14px;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+      animation: fadeIn 0.25s ease-out;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: var(--border-radius);
+      padding: 14px;
+      margin-bottom: 14px;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: var(--text);
+    }
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-item {
+      background: rgba(255, 255, 255, 0.03);
+      padding: 8px 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .info-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-bottom: 2px;
+    }
+    .info-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    /* Forms & Inputs */
+    .form-group {
+      margin-bottom: 12px;
+    }
+    .form-label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+    .form-input {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid var(--card-border);
+      color: var(--text);
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: var(--transition);
+    }
+    .form-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(10, 132, 255, 0.2);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 100%;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-primary:active {
+      background: var(--primary-hover);
+    }
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+    .btn-secondary:active {
+      background: rgba(255, 255, 255, 0.12);
+    }
+    .btn-danger {
+      background: rgba(255, 69, 58, 0.15);
+      color: var(--danger);
+      border: 1px solid rgba(255, 69, 58, 0.25);
+    }
+    .btn-danger:active {
+      background: rgba(255, 69, 58, 0.25);
+    }
+    .btn-sm {
+      padding: 5px 9px;
+      font-size: 11px;
+      width: auto;
+      border-radius: 6px;
+    }
+
+    /* Custom Checkbox */
+    .app-checkbox {
+      appearance: none;
+      -webkit-appearance: none;
+      width: 19px;
+      height: 19px;
+      border: 1.5px solid rgba(255, 255, 255, 0.35);
+      border-radius: 5px;
+      outline: none;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 10px;
+      flex-shrink: 0;
+      background: rgba(255, 255, 255, 0.05);
+      transition: all 0.15s ease;
+      position: relative;
+    }
+    .app-checkbox:checked {
+      background-color: var(--primary);
+      border-color: var(--primary);
+    }
+    .app-checkbox:checked::after {
+      content: "";
+      display: block;
+      width: 5px;
+      height: 9px;
+      border: solid white;
+      border-width: 0 2px 2px 0;
+      transform: rotate(45deg);
+      margin-bottom: 2px;
+    }
+
+    /* List items */
+    .item-list {
+      list-style: none;
+    }
+    .list-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 9px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      font-size: 12px;
+      cursor: pointer;
+      border-radius: 6px;
+      transition: background 0.15s ease;
+    }
+    .list-row:last-child {
+      border-bottom: none;
+    }
+    .list-row:hover {
+      background: rgba(255, 255, 255, 0.03);
+    }
+    .list-row.selected {
+      background: rgba(10, 132, 255, 0.12);
+    }
+    .list-row .pkg-name {
+      font-family: monospace;
+      font-size: 12px;
+      color: var(--text);
+      word-break: break-all;
+    }
+
+    /* Toolbar for select all & bulk actions */
+    .select-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 4px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: 12px;
+    }
+
+    /* Switch toggle */
+    .switch-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .switch-row:last-child {
+      border-bottom: none;
+    }
+    .switch-info .title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+    }
+    .switch-info .sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 1px;
+    }
+    .toggle {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+    .toggle input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #39393d;
+      transition: .3s;
+      border-radius: 24px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--primary);
+    }
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Modal Picker */
+    .modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.25s ease;
+    }
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      border-top: 1px solid var(--card-border);
+      border-radius: 16px 16px 0 0;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      padding: 16px;
+      transform: translateY(100%);
+      transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    .modal-overlay.active .modal-content {
+      transform: translateY(0);
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .modal-header h3 {
+      font-size: 15px;
+      font-weight: 600;
+    }
+    .modal-search {
+      margin-bottom: 8px;
+    }
+    .modal-list {
+      list-style: none;
+      overflow-y: auto;
+      max-height: 48vh;
+      padding-right: 4px;
+    }
+
+    /* Sticky Bottom Floating Save Bar */
+    .sticky-save-bar {
+      position: fixed;
+      bottom: 16px;
+      left: 14px;
+      right: 14px;
+      background: rgba(24, 24, 28, 0.96);
+      border: 1px solid rgba(10, 132, 255, 0.45);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 10px 14px;
+      border-radius: 12px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+      z-index: 150;
+      animation: slideUp 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(120%); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background: var(--warning);
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 6px;
+      box-shadow: 0 0 8px var(--warning);
+      animation: pulse 1.5s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.9); opacity: 0.7; }
+      50% { transform: scale(1.3); opacity: 1; }
+      100% { transform: scale(0.9); opacity: 0.7; }
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.04);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    /* Terminal Output Log */
+    .log-box {
+      background: #09090b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      color: #10b981;
+      min-height: 140px;
+      max-height: 240px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+      margin-top: 10px;
+      line-height: 1.45;
+    }
+
+    /* Toast */
+    #toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: rgba(44, 44, 46, 0.95);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 999;
+      pointer-events: none;
+    }
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-title">
+      <h1>HyperOS Compatibility</h1>
+      <span>Bảng điều khiển hệ thống</span>
+    </div>
+    <div id="statusBadge" class="badge">Đang kiểm tra...</div>
+  </header>
+
+  <nav class="tab-nav">
+    <button class="tab-btn active" onclick="openTab('tab-dash')">Tổng quan</button>
+    <button class="tab-btn" onclick="openTab('tab-apps')">Ứng dụng</button>
+    <button class="tab-btn" onclick="openTab('tab-hw')">Phần cứng</button>
+    <button class="tab-btn" onclick="openTab('tab-maint')">Bảo trì</button>
+  </nav>
+
+  <div class="container">
+    <!-- Tab 1: Tổng quan -->
+    <div id="tab-dash" class="tab-pane active">
+      <div class="card">
+        <div class="card-title">
+          <span>Môi trường hệ thống</span>
+          <button class="btn btn-secondary btn-sm" onclick="loadStatus()">Làm mới</button>
+        </div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Mã thiết bị (Device)</div>
+            <div id="valDevice" class="info-value">...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Dòng máy (Model)</div>
+            <div id="valModel" class="info-value">...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Nền tảng ROM</div>
+            <div id="valRom" class="info-value">...</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label" style="display: flex; justify-content: space-between; align-items: center;">
+              <span>Giám sát (Guardian)</span>
+              <button id="btnToggleGuardian" class="btn btn-primary btn-sm" style="padding: 2px 7px; font-size: 10px;" onclick="toggleGuardianQuick()">Bật / Tắt</button>
+            </div>
+            <div id="valGuardian" class="info-value">...</div>
+          </div>
+          <div class="info-item" style="grid-column: span 2;">
+            <div class="info-label">Phiên bản Kernel & Nhân hệ điều hành</div>
+            <div id="valKernel" class="info-value">...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Ma trận chứng thực & Bảo mật ngân hàng</div>
+        <div class="info-grid">
+          <div class="info-item">
+            <div class="info-label">Ứng dụng giả lập phần cứng</div>
+            <div id="valHwCount" class="info-value" style="color: var(--primary);">0 gói</div>
+          </div>
+          <div class="info-item">
+            <div class="info-label">Ứng dụng bảo vệ Keystore gốc</div>
+            <div id="valMapCount" class="info-value" style="color: var(--accent);">0 gói</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab 2: Chứng thực & Ứng dụng -->
+    <div id="tab-apps" class="tab-pane">
+      <!-- Thanh Lưu & Áp dụng thay đổi -->
+      <div class="card" id="saveCard" style="border: 1px solid rgba(10, 132, 255, 0.25); background: rgba(10, 132, 255, 0.06); padding: 14px; margin-bottom: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span style="font-size: 14px; font-weight: 600; color: #fff;">💾 Lưu & Áp dụng thay đổi</span>
+          <span id="saveStatusBadge" class="badge" style="font-size: 10.5px; padding: 3px 9px;">Đã đồng bộ</span>
+        </div>
+        <div id="saveStatusSub" style="font-size: 11.5px; color: var(--text-muted); margin-bottom: 12px; line-height: 1.4;">
+          Hệ thống đang hoạt động với các quy tắc mới nhất.
+        </div>
+        <button id="btnSaveMain" class="btn btn-primary" style="width: 100%; padding: 10px 16px; font-size: 13px; font-weight: 600; box-shadow: 0 2px 10px rgba(10,132,255,0.35);" onclick="saveAndApplyChanges()">
+          Lưu & Áp dụng thay đổi
+        </button>
+      </div>
+
+      <!-- Danh sách Ứng dụng giả lập chứng thực phần cứng -->
+      <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+          <div style="font-size: 14px; font-weight: 600; color: var(--text);">Ứng dụng giả lập phần cứng</div>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button class="btn btn-danger btn-sm" onclick="clearAllTargets()">Xóa tất cả</button>
+            <button class="btn btn-primary btn-sm" onclick="openPackagePicker('target')">+ Chọn từ máy</button>
+          </div>
+        </div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+          Các ứng dụng được chuyển tiếp chứng thư bảo mật để vượt kiểm tra tính toàn vẹn (target.txt).
+        </p>
+        <div style="background: rgba(10, 132, 255, 0.08); border: 1px solid rgba(10, 132, 255, 0.2); border-radius: 8px; padding: 7px 10px; font-size: 11px; color: #70b4ff; margin-bottom: 10px;">
+          💡 <strong>Không cần khởi động lại máy</strong>: Khi lưu và áp dụng, tiến trình ứng dụng sẽ tự động được làm mới để nhận quy tắc ngay khi mở lại.
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+          <input type="text" id="newTargetInput" class="form-input" placeholder="Nhập tên gói thủ công (VD: com.example.app)">
+          <button class="btn btn-secondary btn-sm" style="flex-shrink: 0;" onclick="addTargetPackage()">Thêm</button>
+        </div>
+
+        <!-- Thanh chọn hàng loạt & Xóa đã chọn -->
+        <div class="select-toolbar">
+          <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="chkSelectAllTargets" class="app-checkbox" onchange="toggleSelectAllTargets(this.checked)">
+            <span style="font-weight: 500;">Chọn tất cả (<span id="totalTargetCount">0</span>)</span>
+          </label>
+          <button id="btnDeleteSelectedTargets" class="btn btn-danger btn-sm" style="display: none; padding: 4px 10px;" onclick="deleteSelectedTargets()">
+            🗑️ Xóa đã chọn (<span id="countSelectedTargets">0</span>)
+          </button>
+        </div>
+
+        <ul id="targetList" class="item-list" style="margin-top: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+          <li class="list-row"><span class="pkg-name">Đang tải danh sách mục tiêu...</span></li>
+        </ul>
+      </div>
+
+      <!-- Danh sách Bảo vệ Keystore gốc cho ngân hàng -->
+      <div class="card">
+        <div class="card-title">Bảo vệ Keystore gốc cho ngân hàng</div>
+        <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 10px;">
+          Bảo toàn chứng thư phần cứng gốc để ứng dụng ngân hàng không bị lỗi mã PIN và xác thực sinh trắc học (app_keybox.map).
+        </p>
+        <div class="switch-row">
+          <div class="switch-info">
+            <div class="title">Tự động phát hiện ứng dụng tài chính</div>
+            <div class="sub">Tự động nhận diện ngân hàng & ví điện tử đã cài đặt trên máy</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chkAutoDetect" onchange="toggleAutoDetect(this.checked)">
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span style="font-size: 12px; color: var(--text-muted); font-weight: 500;">Danh sách giữ Keystore gốc:</span>
+          <div style="display: flex; gap: 6px; flex-shrink: 0;">
+            <button class="btn btn-danger btn-sm" onclick="clearAllKeystore()">Xóa tất cả</button>
+            <button class="btn btn-primary btn-sm" onclick="openPackagePicker('keystore')">+ Chọn từ máy</button>
+          </div>
+        </div>
+
+        <!-- Thanh chọn hàng loạt & Xóa đã chọn Keystore -->
+        <div class="select-toolbar">
+          <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+            <input type="checkbox" id="chkSelectAllKeystores" class="app-checkbox" onchange="toggleSelectAllKeystores(this.checked)">
+            <span style="font-weight: 500;">Chọn tất cả (<span id="totalKeystoreCount">0</span>)</span>
+          </label>
+          <button id="btnDeleteSelectedKeystores" class="btn btn-danger btn-sm" style="display: none; padding: 4px 10px;" onclick="deleteSelectedKeystores()">
+            🗑️ Xóa đã chọn (<span id="countSelectedKeystores">0</span>)
+          </button>
+        </div>
+
+        <ul id="keystoreList" class="item-list" style="margin-top: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+          <li class="list-row"><span class="pkg-name">Đang tải danh sách ngân hàng...</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Tab 3: Cấu hình phần cứng -->
+    <div id="tab-hw" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Định danh phần cứng & Nhân hệ thống</div>
+        <div class="form-group">
+          <label class="form-label">Mã thiết bị (Codename Device)</label>
+          <input type="text" id="cfgDevice" class="form-input" placeholder="Để trống để tự động nhận diện từ máy">
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+            Mặc định từ ROM: <span id="hwDefaultDevice" style="color: var(--primary); font-weight: 500;">...</span>
+          </small>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Tên dòng máy (Model)</label>
+          <input type="text" id="cfgModel" class="form-input" placeholder="Để trống để tự động nhận diện từ máy">
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+            Mặc định từ ROM: <span id="hwDefaultModel" style="color: var(--primary); font-weight: 500;">...</span>
+          </small>
+        </div>
+        <div class="switch-row" style="margin-top: 10px;">
+          <div class="switch-info">
+            <div class="title">Chuẩn hóa tên nhân Kernel (Uname Spoofing)</div>
+            <div class="sub">Loại bỏ các cờ tùy biến/dirty và đồng bộ ngày build theo ROM gốc qua SuSFS</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chkUname" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Dịch vụ giám sát tự động (Guardian Daemon)</div>
+        <div class="switch-row">
+          <div class="switch-info">
+            <div class="title">Tiến trình giám sát tự động (Guardian Daemon)</div>
+            <div class="sub">Tự động kích hoạt đồng bộ khi cài đặt hoặc gỡ bỏ ứng dụng mới</div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" id="chkGuardian" checked>
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="form-group" style="margin-top: 10px;">
+          <label class="form-label">Chu kỳ kiểm tra ngầm (Giây)</label>
+          <input type="number" id="cfgInterval" class="form-input" min="30" max="600" value="120">
+          <small style="font-size: 11px; color: var(--text-muted); display: block; margin-top: 4px;">
+            Thời gian giữa các lần quét (Khuyến nghị: 120s, tối thiểu 30s, tối đa 600s).
+          </small>
+        </div>
+        <button class="btn btn-primary" style="margin-top: 6px;" onclick="saveHardwareConfig()">💾 Lưu cấu hình phần cứng & Giám sát</button>
+      </div>
+    </div>
+
+    <!-- Tab 4: Bảo trì & Nhật ký -->
+    <div id="tab-maint" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Công cụ bảo trì & Khắc phục sự cố</div>
+        <div style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Mục 1: Dọn dẹp cache -->
+          <div style="padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px;">
+              🧹 Dọn dẹp bộ nhớ đệm bảo mật (App Security Cache)
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-bottom: 8px;">
+              Xóa sạch các token phát hiện môi trường, cache dấu vết và crash markers của ứng dụng ngân hàng (Techcombank, Sacombank, TPBank...).
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="cleanSecurityCache()">
+              Thực hiện dọn dẹp cache
+            </button>
+          </div>
+
+          <!-- Mục 2: Nạp lại HMA -->
+          <div style="padding-bottom: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+            <div style="font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px;">
+              🔄 Nạp lại quy tắc ẩn HMA (Hide My Applist)
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-bottom: 8px;">
+              Đồng bộ lại mẫu cấu hình che giấu Root/Zygisk sang Hide My Applist để cô lập các ứng dụng nhạy cảm khỏi bị phát hiện.
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="syncHma()">
+              Nạp lại quy tắc HMA
+            </button>
+          </div>
+
+          <!-- Mục 3: Khôi phục cấu hình gốc -->
+          <div>
+            <div style="font-size: 13px; font-weight: 600; color: var(--danger); margin-bottom: 3px;">
+              ⚠️ Khôi phục tệp cấu hình về bản gốc ban đầu
+            </div>
+            <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.4; margin-bottom: 8px;">
+              Khôi phục toàn bộ các tệp target.txt, app_keybox.map và spoof.conf về trạng thái sao lưu nguyên bản trước khi cài đặt module.
+            </div>
+            <button class="btn btn-danger btn-sm" onclick="restoreBackups()">
+              Khôi phục bản sao lưu gốc
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Bảng điều khiển nhật ký thực thi</span>
+          <div style="display: flex; gap: 6px;">
+            <button class="btn btn-secondary btn-sm" onclick="copyLog()">Sao chép</button>
+            <button class="btn btn-secondary btn-sm" onclick="clearLog()">Xóa</button>
+          </div>
+        </div>
+        <div id="logBox" class="log-box">Hệ thống sẵn sàng.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal chọn ứng dụng nhanh (Hỗ trợ chọn hàng loạt) -->
+  <div id="packageModal" class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modalTitle">Chọn ứng dụng từ máy</h3>
+        <button class="btn btn-secondary btn-sm" onclick="closePackagePicker()">Đóng</button>
+      </div>
+      <div class="modal-search">
+        <input type="text" id="modalSearchInput" class="form-input" placeholder="🔍 Tìm kiếm gói hoặc tên ứng dụng..." oninput="filterInstalledPackages()">
+      </div>
+
+      <!-- Thanh chọn tất cả trong modal -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 4px 8px 4px; margin-bottom: 6px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); font-size: 12px;">
+        <label style="display: flex; align-items: center; cursor: pointer; user-select: none;">
+          <input type="checkbox" id="chkModalSelectAll" class="app-checkbox" onchange="toggleModalSelectAll(this.checked)">
+          <span style="font-weight: 500;">Chọn tất cả kết quả đang xem</span>
+        </label>
+        <span id="modalSelectedCountText" style="color: var(--primary); font-weight: 600;">Đã chọn: 0</span>
+      </div>
+
+      <ul id="modalPackageList" class="modal-list">
+        <li class="list-row"><span class="pkg-name">Đang tải danh sách ứng dụng...</span></li>
+      </ul>
+
+      <!-- Thanh nút xác nhận thêm hàng loạt -->
+      <div style="margin-top: 10px; display: flex; gap: 8px; padding-top: 10px; border-top: 1px solid var(--card-border);">
+        <button class="btn btn-secondary" style="flex: 1;" onclick="closePackagePicker()">Hủy</button>
+        <button id="btnModalConfirmAdd" class="btn btn-primary" style="flex: 2;" onclick="confirmAddSelectedPackages()">
+          + Thêm vào danh sách (0)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thanh lưu nổi khi có thay đổi chưa lưu -->
+  <div id="stickySaveBar" class="sticky-save-bar" style="display: none;">
+    <div style="display: flex; align-items: center; min-width: 0; flex: 1; padding-right: 8px;">
+      <span class="pulse-dot"></span>
+      <span id="stickySaveText" style="font-size: 12.5px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Có thay đổi chưa lưu</span>
+    </div>
+    <button class="btn btn-primary btn-sm" style="padding: 7px 15px; font-size: 12px; font-weight: 600; width: auto; flex-shrink: 0;" onclick="saveAndApplyChanges()">
+      💾 Lưu & Áp dụng ngay
+    </button>
+  </div>
+
+  <div id="toast">Đã lưu cài đặt</div>
+
+  <script>
+    const MODDIR = "/data/adb/modules/hyperos_compat";
+    const CONF_FILE = "/data/adb/hyperos_compat/config.json";
+    let callbackCounter = 0;
+    let installedPackages = [];
+    let currentPickerTarget = "target"; // "target" or "keystore"
+    let currentConfig = null;
+
+    // Trạng thái danh sách trong bộ nhớ UI
+    let targetApps = [];
+    let keystoreApps = [];
+    let selectedTargets = new Set();
+    let selectedKeystores = new Set();
+    let modalSelectedPackages = new Set();
+    let currentFilteredModalApps = [];
+    let pendingAffectedPackages = new Set();
+    let hasUnsavedChanges = false;
+
+    function showToast(msg) {
+      const toastEl = document.getElementById("toast");
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      setTimeout(() => toastEl.classList.remove("show"), 2500);
+      try {
+        const bridge = window.ksu || (typeof ksu !== "undefined" ? ksu : null);
+        if (bridge && typeof bridge.toast === "function") bridge.toast(msg);
+      } catch (e) {}
+    }
+
+    function appendLog(text) {
+      const box = document.getElementById("logBox");
+      if (!box || !text) return;
+      const time = new Date().toLocaleTimeString();
+      const line = `[${time}] ${text}`;
+      if (box.textContent.trim() === "Hệ thống sẵn sàng.") {
+        box.textContent = line;
+      } else {
+        box.textContent += "\n" + line;
+      }
+      box.scrollTop = box.scrollHeight;
+    }
+
+    function clearLog() {
+      const box = document.getElementById("logBox");
+      if (box) box.textContent = "Hệ thống sẵn sàng.";
+      showToast("Đã xóa nhật ký");
+    }
+
+    function copyLog() {
+      const box = document.getElementById("logBox");
+      if (!box || !box.textContent.trim() || box.textContent.trim() === "Hệ thống sẵn sàng.") {
+        showToast("Nhật ký trống");
+        return;
+      }
+      const textToCopy = box.textContent;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textToCopy).then(() => {
+          showToast("Đã sao chép nhật ký");
+        }).catch(() => {
+          fallbackCopyLog(textToCopy);
+        });
+      } else {
+        fallbackCopyLog(textToCopy);
+      }
+    }
+
+    function fallbackCopyLog(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        showToast("Đã sao chép nhật ký");
+      } catch (e) {
+        showToast("Không thể sao chép");
+      }
+      document.body.removeChild(ta);
+    }
+
+    function setUnsavedChanges(changed, desc) {
+      hasUnsavedChanges = changed;
+      const badge = document.getElementById("saveStatusBadge");
+      const sub = document.getElementById("saveStatusSub");
+      const stickyBar = document.getElementById("stickySaveBar");
+      const stickyText = document.getElementById("stickySaveText");
+      const card = document.getElementById("saveCard");
+
+      const btnMain = document.getElementById("btnSaveMain");
+
+      if (changed) {
+        if (badge) {
+          badge.textContent = "Chưa lưu";
+          badge.className = "badge warn";
+        }
+        if (sub) sub.textContent = desc || "Có thay đổi chưa được lưu. Hãy nhấn 'Lưu & Áp dụng' để kích hoạt ngay!";
+        if (stickyBar) stickyBar.style.display = "flex";
+        if (stickyText) stickyText.textContent = desc || "Có thay đổi chưa lưu";
+        if (card) {
+          card.style.borderColor = "rgba(255, 214, 10, 0.45)";
+          card.style.background = "rgba(255, 214, 10, 0.08)";
+        }
+        if (btnMain) btnMain.textContent = "💾 Lưu & Áp dụng ngay";
+      } else {
+        if (badge) {
+          badge.textContent = "Đã đồng bộ";
+          badge.className = "badge";
+        }
+        if (sub) sub.textContent = "Hệ thống đang hoạt động với các quy tắc mới nhất.";
+        if (stickyBar) stickyBar.style.display = "none";
+        if (card) {
+          card.style.borderColor = "rgba(10, 132, 255, 0.25)";
+          card.style.background = "rgba(10, 132, 255, 0.06)";
+        }
+        if (btnMain) btnMain.textContent = "Lưu & Áp dụng thay đổi";
+      }
+    }
+
+    // KernelSU / APatch Compatible Shell Execution Bridge
+    function runShell(command, quiet = false) {
+      return new Promise((resolve) => {
+        if (!quiet) appendLog("[LỆNH] " + command);
+        const bridge = window.ksu || (typeof ksu !== "undefined" ? ksu : null);
+        
+        // 1. Kiểm tra KernelSU / APatch Java Interface
+        if (bridge && typeof bridge.exec === "function") {
+          const cbName = "_hcl_cb_" + Date.now() + "_" + (callbackCounter++);
+          const timer = setTimeout(() => {
+            delete window[cbName];
+            resolve({ errno: -1, stdout: "", stderr: "Quá thời gian phản hồi (Timeout)" });
+          }, 15000);
+
+          window[cbName] = (errno, stdout, stderr) => {
+            clearTimeout(timer);
+            delete window[cbName];
+            resolve({ errno: errno || 0, stdout: stdout || "", stderr: stderr || "" });
+          };
+
+          try {
+            bridge.exec(command, "{}", cbName);
+            return;
+          } catch (e) {
+            try {
+              bridge.exec(command, cbName);
+              return;
+            } catch (e2) {
+              clearTimeout(timer);
+              delete window[cbName];
+              resolve({ errno: 1, stdout: "", stderr: String(e2) });
+              return;
+            }
+          }
+        }
+
+        // 2. Kiểm tra window.apatch
+        if (window.apatch && typeof window.apatch.exec === "function") {
+          const cbName = "_hcl_ap_cb_" + Date.now() + "_" + (callbackCounter++);
+          window[cbName] = (errno, stdout, stderr) => {
+            delete window[cbName];
+            resolve({ errno: errno || 0, stdout: stdout || "", stderr: stderr || "" });
+          };
+          try {
+            window.apatch.exec(command, "{}", cbName);
+            return;
+          } catch (e) {
+            delete window[cbName];
+          }
+        }
+
+        // 3. Fallback cho chế độ duyệt Web ngoài môi trường Root Manager
+        setTimeout(() => {
+          resolve({
+            errno: 0,
+            stdout: "Chế độ mô phỏng trình duyệt:\n- Không phát hiện KernelSU bridge",
+            stderr: ""
+          });
+        }, 300);
+      });
+    }
+
+    function openTab(tabId) {
+      document.querySelectorAll(".tab-pane").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".tab-btn").forEach(el => el.classList.remove("active"));
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) targetPane.classList.add("active");
+      if (event && event.target) event.target.classList.add("active");
+    }
+
+    async function loadStatus() {
+      const badge = document.getElementById("statusBadge");
+      badge.textContent = "Đang kiểm tra...";
+      badge.className = "badge warn";
+
+      // 1. Lấy thông tin thiết bị và kernel
+      const propRes = await runShell("getprop ro.product.vendor.device; getprop ro.product.vendor.model; getprop ro.product.model; uname -r", true);
+      const lines = propRes.stdout.trim().split("\n");
+      const dev = lines[0] || "Tự động";
+      const model = lines[1] || lines[2] || "Tự động";
+      const kernel = lines[3] || "Linux";
+
+      document.getElementById("valDevice").textContent = dev;
+      document.getElementById("valModel").textContent = model;
+      document.getElementById("valKernel").textContent = kernel;
+
+      const hintDev = document.getElementById("hwDefaultDevice");
+      if (hintDev) hintDev.textContent = dev;
+      const hintMod = document.getElementById("hwDefaultModel");
+      if (hintMod) hintMod.textContent = model;
+
+      // 2. Lấy môi trường ROM
+      const romRes = await runShell("cat " + MODDIR + "/rom_env.txt 2>/dev/null || echo aosp", true);
+      const romEnv = romRes.stdout.trim();
+      document.getElementById("valRom").textContent = romEnv === "hyperos" ? "Xiaomi HyperOS / MIUI" : "Generic AOSP / Custom ROM";
+
+      // 3. Lấy trạng thái Guardian
+      const guardRes = await runShell("[ -f /data/adb/hyperos_compat/disable_guardian ] && echo disabled || ([ -f /dev/hcl_guardian.pid ] && [ -d /proc/$(cat /dev/hcl_guardian.pid 2>/dev/null) ] && echo running || echo inactive)", true);
+      const guardState = guardRes.stdout.trim();
+      const valGuard = document.getElementById("valGuardian");
+      if (guardState === "running") {
+        valGuard.textContent = "Đang chạy (Tự động)";
+        valGuard.style.color = "var(--accent)";
+      } else if (guardState === "disabled") {
+        valGuard.textContent = "Đã tắt (Công tắc)";
+        valGuard.style.color = "var(--warning)";
+      } else {
+        valGuard.textContent = "Chưa kích hoạt";
+        valGuard.style.color = "var(--text-muted)";
+      }
+
+      // 4. Lấy số lượng ứng dụng trong danh sách
+      const countsRes = await runShell("wc -l /data/adb/tricky_store/target.txt 2>/dev/null; grep -c '[[:space:]]off' /data/adb/tricky_store/app_keybox.map 2>/dev/null", true);
+      const cLines = countsRes.stdout.trim().split("\n");
+      const hwCount = parseInt(cLines[0]) || 0;
+      const mapCount = parseInt(cLines[1]) || 0;
+      document.getElementById("valHwCount").textContent = hwCount + " ứng dụng";
+      document.getElementById("valMapCount").textContent = mapCount + " ứng dụng";
+
+      badge.textContent = "Hoạt động";
+      badge.className = "badge";
+
+      // Nạp cấu hình và danh sách ứng dụng
+      await loadConfig();
+      await loadAppLists();
+    }
+
+    async function loadConfig() {
+      const res = await runShell("cat " + CONF_FILE + " 2>/dev/null || cat " + MODDIR + "/config.json 2>/dev/null", true);
+      try {
+        currentConfig = JSON.parse(res.stdout);
+        document.getElementById("cfgDevice").value = currentConfig.hardware?.custom_device || "";
+        document.getElementById("cfgModel").value = currentConfig.hardware?.custom_model || "";
+        document.getElementById("chkUname").checked = currentConfig.hardware?.spoof_uname !== false;
+        document.getElementById("chkGuardian").checked = currentConfig.guardian?.enabled !== false;
+        document.getElementById("cfgInterval").value = currentConfig.guardian?.interval_seconds || 120;
+        document.getElementById("chkAutoDetect").checked = currentConfig.attestation?.auto_detect_fintech === true;
+      } catch (e) {
+        console.error("Lỗi phân tích config:", e);
+      }
+    }
+
+    async function saveHardwareConfig() {
+      if (!currentConfig) currentConfig = {};
+      if (!currentConfig.hardware) currentConfig.hardware = {};
+      if (!currentConfig.guardian) currentConfig.guardian = {};
+
+      appendLog("[HÀNH ĐỘNG] Đang lưu cấu hình phần cứng & giám sát...");
+      currentConfig.hardware.custom_device = document.getElementById("cfgDevice").value.trim();
+      currentConfig.hardware.custom_model = document.getElementById("cfgModel").value.trim();
+      currentConfig.hardware.spoof_uname = document.getElementById("chkUname").checked;
+      currentConfig.guardian.enabled = document.getElementById("chkGuardian").checked;
+      currentConfig.guardian.interval_seconds = parseInt(document.getElementById("cfgInterval").value) || 120;
+
+      if (!currentConfig.guardian.enabled) {
+        await runShell("touch /data/adb/hyperos_compat/disable_guardian; kill $(cat /dev/hcl_guardian.pid 2>/dev/null) 2>/dev/null || true", true);
+      } else {
+        await runShell("rm -f /data/adb/hyperos_compat/disable_guardian; [ -f " + MODDIR + "/guardian.sh ] && nohup /system/bin/sh " + MODDIR + "/guardian.sh </dev/null >/dev/null 2>&1 &", true);
+      }
+
+      const jsonStr = JSON.stringify(currentConfig, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      await runShell("echo '" + b64 + "' | base64 -d > " + CONF_FILE, true);
+      showToast("Đã lưu cấu hình phần cứng & giám sát");
+      appendLog("[THÀNH CÔNG] Đã lưu cấu hình phần cứng và trạng thái Guardian.");
+      await loadStatus();
+    }
+
+    async function toggleGuardianQuick() {
+      showToast("Đang chuyển trạng thái Guardian...");
+      appendLog("[HÀNH ĐỘNG] Chuyển đổi trạng thái tiến trình Guardian...");
+      const res = await runShell("sh " + MODDIR + "/action.sh --toggle-guardian", false);
+      if (res.stdout) appendLog(res.stdout);
+      await loadStatus();
+    }
+
+    // Nạp dữ liệu từ các tệp trên máy vào bộ nhớ UI
+    async function loadAppLists() {
+      // 1. Danh sách target.txt
+      const targetRes = await runShell("cat /data/adb/tricky_store/target.txt 2>/dev/null", true);
+      targetApps = targetRes.stdout.trim().split("\n").filter(Boolean);
+      selectedTargets.clear();
+      renderTargetList();
+
+      // 2. Danh sách app_keybox.map
+      const mapRes = await runShell("grep '[[:space:]]off' /data/adb/tricky_store/app_keybox.map 2>/dev/null | awk '{print $1}'", true);
+      keystoreApps = mapRes.stdout.trim().split("\n").filter(Boolean);
+      selectedKeystores.clear();
+      renderKeystoreList();
+
+      setUnsavedChanges(false);
+    }
+
+    // --- XỬ LÝ DANH SÁCH TARGET.TXT ---
+    function renderTargetList() {
+      const listEl = document.getElementById("targetList");
+      listEl.innerHTML = "";
+      document.getElementById("totalTargetCount").textContent = targetApps.length;
+
+      const chkAll = document.getElementById("chkSelectAllTargets");
+      const btnDelSelected = document.getElementById("btnDeleteSelectedTargets");
+      const countDelSpan = document.getElementById("countSelectedTargets");
+
+      if (targetApps.length === 0) {
+        listEl.innerHTML = '<li class="list-row"><span class="pkg-name" style="color:var(--text-muted)">Chưa có ứng dụng mục tiêu</span></li>';
+        chkAll.checked = false;
+        chkAll.disabled = true;
+        btnDelSelected.style.display = "none";
+        return;
+      }
+
+      chkAll.disabled = false;
+      chkAll.checked = selectedTargets.size === targetApps.length && targetApps.length > 0;
+
+      if (selectedTargets.size > 0) {
+        btnDelSelected.style.display = "inline-flex";
+        countDelSpan.textContent = selectedTargets.size;
+      } else {
+        btnDelSelected.style.display = "none";
+      }
+
+      targetApps.forEach(pkg => {
+        const isChecked = selectedTargets.has(pkg);
+        const li = document.createElement("li");
+        li.className = "list-row" + (isChecked ? " selected" : "");
+        li.onclick = (e) => {
+          if (e.target.tagName !== "BUTTON") {
+            toggleTargetRow(pkg);
+          }
+        };
+
+        li.innerHTML = '<div style="display:flex; align-items:center; flex:1; min-width:0;">' +
+            '<input type="checkbox" class="app-checkbox" ' + (isChecked ? 'checked' : '') + ' onclick="event.stopPropagation(); toggleTargetRow(\'' + pkg + '\')">' +
+            '<span class="pkg-name">' + pkg + '</span>' +
+          '</div>' +
+          '<button class="btn btn-danger btn-sm" style="flex-shrink:0; margin-left:8px;" onclick="event.stopPropagation(); removeSingleTarget(\'' + pkg + '\')">Xóa</button>';
+        listEl.appendChild(li);
+      });
+    }
+
+    function toggleSelectAllTargets(checked) {
+      if (checked) {
+        targetApps.forEach(p => selectedTargets.add(p));
+      } else {
+        selectedTargets.clear();
+      }
+      renderTargetList();
+    }
+
+    function toggleTargetRow(pkg) {
+      if (selectedTargets.has(pkg)) {
+        selectedTargets.delete(pkg);
+      } else {
+        selectedTargets.add(pkg);
+      }
+      renderTargetList();
+    }
+
+    function deleteSelectedTargets() {
+      if (selectedTargets.size === 0) return;
+      const count = selectedTargets.size;
+      selectedTargets.forEach(p => {
+        pendingAffectedPackages.add(p);
+        targetApps = targetApps.filter(x => x !== p);
+      });
+      selectedTargets.clear();
+      renderTargetList();
+      setUnsavedChanges(true, "Đã chọn xóa " + count + " ứng dụng mục tiêu");
+      showToast("Đã xóa " + count + " mục. Hãy nhấn 'Lưu & Áp dụng'!");
+    }
+
+    function removeSingleTarget(pkg) {
+      targetApps = targetApps.filter(p => p !== pkg);
+      selectedTargets.delete(pkg);
+      pendingAffectedPackages.add(pkg);
+      renderTargetList();
+      setUnsavedChanges(true, "Đã xóa mục tiêu " + pkg);
+      showToast("Đã xóa: " + pkg + ". Nhấn 'Lưu & Áp dụng' để kích hoạt!");
+    }
+
+    function addTargetPackage(customPkg) {
+      const input = document.getElementById("newTargetInput");
+      const pkg = customPkg || (input ? input.value.trim() : "");
+      if (!pkg) return;
+      if (!targetApps.includes(pkg)) {
+        targetApps.push(pkg);
+        pendingAffectedPackages.add(pkg);
+        if (input && !customPkg) input.value = "";
+        renderTargetList();
+        setUnsavedChanges(true, "Đã thêm mục tiêu " + pkg);
+        showToast("Đã thêm: " + pkg + ". Nhấn 'Lưu & Áp dụng' để kích hoạt!");
+      } else {
+        showToast("Ứng dụng đã tồn tại trong danh sách");
+      }
+    }
+
+    function clearAllTargets() {
+      if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ ứng dụng mục tiêu trong target.txt?")) return;
+      targetApps.forEach(p => pendingAffectedPackages.add(p));
+      targetApps = [];
+      selectedTargets.clear();
+      renderTargetList();
+      setUnsavedChanges(true, "Đã xóa toàn bộ ứng dụng mục tiêu");
+      showToast("Đã làm trống danh sách. Nhấn 'Lưu & Áp dụng' để hoàn tất!");
+    }
+
+    // --- XỬ LÝ DANH SÁCH APP_KEYBOX.MAP (KEYSTORE) ---
+    function renderKeystoreList() {
+      const listEl = document.getElementById("keystoreList");
+      listEl.innerHTML = "";
+      document.getElementById("totalKeystoreCount").textContent = keystoreApps.length;
+
+      const chkAll = document.getElementById("chkSelectAllKeystores");
+      const btnDelSelected = document.getElementById("btnDeleteSelectedKeystores");
+      const countDelSpan = document.getElementById("countSelectedKeystores");
+
+      if (keystoreApps.length === 0) {
+        listEl.innerHTML = '<li class="list-row"><span class="pkg-name" style="color:var(--text-muted)">Chưa có ứng dụng được bảo vệ</span></li>';
+        chkAll.checked = false;
+        chkAll.disabled = true;
+        btnDelSelected.style.display = "none";
+        return;
+      }
+
+      chkAll.disabled = false;
+      chkAll.checked = selectedKeystores.size === keystoreApps.length && keystoreApps.length > 0;
+
+      if (selectedKeystores.size > 0) {
+        btnDelSelected.style.display = "inline-flex";
+        countDelSpan.textContent = selectedKeystores.size;
+      } else {
+        btnDelSelected.style.display = "none";
+      }
+
+      keystoreApps.forEach(pkg => {
+        const isChecked = selectedKeystores.has(pkg);
+        const li = document.createElement("li");
+        li.className = "list-row" + (isChecked ? " selected" : "");
+        li.onclick = (e) => {
+          if (e.target.tagName !== "BUTTON") {
+            toggleKeystoreRow(pkg);
+          }
+        };
+
+        li.innerHTML = '<div style="display:flex; align-items:center; flex:1; min-width:0;">' +
+            '<input type="checkbox" class="app-checkbox" ' + (isChecked ? 'checked' : '') + ' onclick="event.stopPropagation(); toggleKeystoreRow(\'' + pkg + '\')">' +
+            '<span class="pkg-name">' + pkg + '</span>' +
+          '</div>' +
+          '<div style="display:flex; align-items:center; gap:6px; flex-shrink:0; margin-left:8px;">' +
+            '<span class="badge">Keystore Gốc</span>' +
+            '<button class="btn btn-danger btn-sm" onclick="event.stopPropagation(); removeSingleKeystore(\'' + pkg + '\')">Xóa</button>' +
+          '</div>';
+        listEl.appendChild(li);
+      });
+    }
+
+    function toggleSelectAllKeystores(checked) {
+      if (checked) {
+        keystoreApps.forEach(p => selectedKeystores.add(p));
+      } else {
+        selectedKeystores.clear();
+      }
+      renderKeystoreList();
+    }
+
+    function toggleKeystoreRow(pkg) {
+      if (selectedKeystores.has(pkg)) {
+        selectedKeystores.delete(pkg);
+      } else {
+        selectedKeystores.add(pkg);
+      }
+      renderKeystoreList();
+    }
+
+    function deleteSelectedKeystores() {
+      if (selectedKeystores.size === 0) return;
+      const count = selectedKeystores.size;
+      selectedKeystores.forEach(p => {
+        pendingAffectedPackages.add(p);
+        keystoreApps = keystoreApps.filter(x => x !== p);
+      });
+      selectedKeystores.clear();
+      renderKeystoreList();
+      setUnsavedChanges(true, "Đã chọn xóa " + count + " ứng dụng Keystore");
+      showToast("Đã xóa " + count + " mục. Hãy nhấn 'Lưu & Áp dụng'!");
+    }
+
+    function removeSingleKeystore(pkg) {
+      keystoreApps = keystoreApps.filter(p => p !== pkg);
+      selectedKeystores.delete(pkg);
+      pendingAffectedPackages.add(pkg);
+      renderKeystoreList();
+      setUnsavedChanges(true, "Đã xóa bảo vệ Keystore " + pkg);
+      showToast("Đã xóa: " + pkg + ". Nhấn 'Lưu & Áp dụng' để kích hoạt!");
+    }
+
+    function addKeystorePackage(pkg) {
+      if (!pkg) return;
+      if (!keystoreApps.includes(pkg)) {
+        keystoreApps.push(pkg);
+        pendingAffectedPackages.add(pkg);
+        renderKeystoreList();
+        setUnsavedChanges(true, "Đã thêm bảo vệ Keystore " + pkg);
+        showToast("Đã thêm: " + pkg + ". Nhấn 'Lưu & Áp dụng' để kích hoạt!");
+      } else {
+        showToast("Ứng dụng đã được bảo vệ Keystore");
+      }
+    }
+
+    function clearAllKeystore() {
+      if (!confirm("Bạn có chắc chắn muốn xóa toàn bộ danh sách ứng dụng bảo vệ Keystore gốc?")) return;
+      keystoreApps.forEach(p => pendingAffectedPackages.add(p));
+      keystoreApps = [];
+      selectedKeystores.clear();
+      renderKeystoreList();
+      setUnsavedChanges(true, "Đã xóa toàn bộ ứng dụng bảo vệ Keystore");
+      showToast("Đã làm trống danh sách. Nhấn 'Lưu & Áp dụng' để hoàn tất!");
+    }
+
+    // --- CÔNG TẮC TỰ ĐỘNG PHÁT HIỆN TÀI CHÍNH ---
+    async function toggleAutoDetect(enabled) {
+      if (!currentConfig) await loadConfig();
+      if (!currentConfig.attestation) currentConfig.attestation = {};
+      currentConfig.attestation.auto_detect_fintech = enabled;
+      const jsonStr = JSON.stringify(currentConfig, null, 2);
+      const b64 = btoa(unescape(encodeURIComponent(jsonStr)));
+      await runShell("echo '" + b64 + "' | base64 -d > " + CONF_FILE);
+      showToast("Cập nhật quét tự động: " + (enabled ? "Bật" : "Tắt"));
+      runSync();
+    }
+
+    // --- LƯU & ÁP DỤNG THAY ĐỔI (SAVE & APPLY) ---
+    async function saveAndApplyChanges() {
+      const btn = document.getElementById("btnSaveMain");
+      btn.disabled = true;
+      btn.textContent = "⏳ Đang lưu & áp dụng...";
+      showToast("Đang lưu và áp dụng quy tắc...");
+
+      try {
+        // 1. Cập nhật target.txt
+        const targetContent = targetApps.join("\n") + (targetApps.length > 0 ? "\n" : "");
+        const targetB64 = btoa(unescape(encodeURIComponent(targetContent)));
+        await runShell("echo '" + targetB64 + "' | base64 -d > /data/adb/tricky_store/target.txt");
+
+        // 2. Cập nhật app_keybox.map (giữ các dòng tùy chỉnh khác, cập nhật các dòng 'off')
+        const keyboxContent = keystoreApps.map(p => p + "\toff").join("\n") + (keystoreApps.length > 0 ? "\n" : "");
+        const keyboxB64 = btoa(unescape(encodeURIComponent(keyboxContent)));
+        await runShell("grep -v '[[:space:]]off$' /data/adb/tricky_store/app_keybox.map 2>/dev/null > /data/adb/tricky_store/app_keybox.map.tmp || true; echo '" + keyboxB64 + "' | base64 -d >> /data/adb/tricky_store/app_keybox.map.tmp; mv -f /data/adb/tricky_store/app_keybox.map.tmp /data/adb/tricky_store/app_keybox.map");
+
+        // 3. Cập nhật config.json
+        if (!currentConfig) await loadConfig();
+        if (!currentConfig.attestation) currentConfig.attestation = {};
+        currentConfig.attestation.hw_attest_targets = targetApps;
+
+        if (!currentConfig.attestation.exclude_keystore_protect) {
+          currentConfig.attestation.exclude_keystore_protect = [];
+        }
+        // Loại bỏ khỏi exclude_keystore_protect những app đang được bảo vệ trong keystoreApps
+        currentConfig.attestation.exclude_keystore_protect = currentConfig.attestation.exclude_keystore_protect.filter(p => !keystoreApps.includes(p));
+
+        const jsonStr = JSON.stringify(currentConfig, null, 2);
+        const configB64 = btoa(unescape(encodeURIComponent(jsonStr)));
+        await runShell("echo '" + configB64 + "' | base64 -d > " + CONF_FILE);
+
+        // 4. Force-stop các ứng dụng bị tác động để nạp quy tắc mới ngay lập tức
+        const affected = Array.from(pendingAffectedPackages);
+        if (affected.length > 0) {
+          appendLog("[HỆ THỐNG] Đang làm mới tiến trình cho " + affected.length + " ứng dụng...");
+          const batchStop = affected.map(p => "am force-stop '" + p + "' 2>/dev/null").join("; ");
+          await runShell(batchStop);
+        }
+
+        // 5. Chạy attest_sync.sh để đồng bộ hóa hệ thống
+        appendLog("[HỆ THỐNG] Kích hoạt đồng bộ quy tắc...");
+        const resSync = await runShell("sh " + MODDIR + "/attest_sync.sh");
+        appendLog(resSync.stdout);
+
+        // 6. Xóa danh sách pending và tắt thông báo chưa lưu
+        pendingAffectedPackages.clear();
+        setUnsavedChanges(false);
+
+        // 7. Cập nhật lại số lượng và trạng thái trên giao diện
+        await loadStatus();
+        showToast("✓ Đã lưu và áp dụng thành công! Quy tắc có hiệu lực ngay.");
+      } catch (err) {
+        appendLog("[LỖI] " + String(err));
+        showToast("Lỗi khi lưu: " + String(err));
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Lưu & Áp dụng thay đổi";
+      }
+    }
+
+    async function runSync() {
+      showToast("Đang đồng bộ quy tắc...");
+      appendLog("[HÀNH ĐỘNG] Đang đồng bộ quy tắc chứng thực hệ thống...");
+      const res = await runShell("sh " + MODDIR + "/attest_sync.sh", false);
+      if (res.stdout) appendLog(res.stdout);
+      if (res.stderr) appendLog("[LỖI] " + res.stderr);
+      await loadStatus();
+      await loadAppLists();
+      showToast("Đồng bộ hoàn tất");
+    }
+
+    async function cleanSecurityCache() {
+      if (!confirm("Bạn có chắc chắn muốn dọn dẹp bộ nhớ đệm xác thực của các ứng dụng? Thao tác này giúp giải quyết cảnh báo phát hiện ROM.")) return;
+      showToast("Đang dọn dẹp cache...");
+      appendLog("[HÀNH ĐỘNG] Đang dọn dẹp bộ nhớ đệm bảo mật (App Security Cache)...");
+      const res = await runShell("sh " + MODDIR + "/scripts/cache_cleaner.sh", false);
+      if (res.stdout) appendLog(res.stdout);
+      if (res.stderr) appendLog("[LỖI] " + res.stderr);
+      showToast("Đã dọn dẹp cache bảo mật");
+    }
+
+    async function syncHma() {
+      showToast("Đang nạp lại quy tắc HMA...");
+      appendLog("[HÀNH ĐỘNG] Đang nạp lại quy tắc che giấu Hide My Applist (HMA)...");
+      const res = await runShell("sh " + MODDIR + "/scripts/hma_sync.sh", false);
+      if (res.stdout) appendLog(res.stdout);
+      if (res.stderr) appendLog("[LỖI] " + res.stderr);
+      showToast("Đã nạp lại HMA");
+    }
+
+    async function restoreBackups() {
+      if (!confirm("CẢNH BÁO: Thao tác này sẽ khôi phục toàn bộ các tệp target.txt, app_keybox.map, spoof.conf về bản gốc trước khi cài HCL. Bạn có muốn tiếp tục?")) return;
+      showToast("Đang khôi phục bản sao lưu...");
+      appendLog("[CẢNH BÁO] Đang khôi phục toàn bộ tệp cấu hình về bản gốc ban đầu...");
+      const res = await runShell("[ -f /data/adb/tricky_store/target.txt.hcl_bak ] && cp -f /data/adb/tricky_store/target.txt.hcl_bak /data/adb/tricky_store/target.txt; [ -f /data/adb/tricky_store/app_keybox.map.hcl_bak ] && cp -f /data/adb/tricky_store/app_keybox.map.hcl_bak /data/adb/tricky_store/app_keybox.map; [ -f /data/adb/tricky_store/spoof.conf.hcl_bak ] && cp -f /data/adb/tricky_store/spoof.conf.hcl_bak /data/adb/tricky_store/spoof.conf; echo 'Đã khôi phục hoàn tất.'", false);
+      if (res.stdout) appendLog(res.stdout);
+      await loadStatus();
+      await loadAppLists();
+      showToast("Đã khôi phục bản sao lưu gốc");
+    }
+
+    // --- MODAL CHỌN ỨNG DỤNG TỪ MÁY (MULTI-SELECT) ---
+    async function loadInstalledPackages() {
+      const res = await runShell("pm list packages -3 2>/dev/null | sed 's/^package://' | sort", true);
+      installedPackages = res.stdout.trim().split("\n").filter(Boolean);
+    }
+
+    function openPackagePicker(targetType) {
+      currentPickerTarget = targetType;
+      const modal = document.getElementById("packageModal");
+      const title = document.getElementById("modalTitle");
+      title.textContent = targetType === "target" ? "Chọn ứng dụng giả lập chứng thực" : "Chọn ứng dụng bảo vệ Keystore gốc";
+      
+      modalSelectedPackages.clear();
+      document.getElementById("modalSearchInput").value = "";
+      modal.classList.add("active");
+
+      currentFilteredModalApps = installedPackages;
+      renderModalPackageList(currentFilteredModalApps);
+      updateModalSelectionUI();
+
+      if (installedPackages.length === 0) {
+        loadInstalledPackages().then(() => {
+          currentFilteredModalApps = installedPackages;
+          renderModalPackageList(currentFilteredModalApps);
+          updateModalSelectionUI();
+        });
+      }
+    }
+
+    function closePackagePicker() {
+      document.getElementById("packageModal").classList.remove("active");
+    }
+
+    function filterInstalledPackages() {
+      const query = document.getElementById("modalSearchInput").value.toLowerCase().trim();
+      currentFilteredModalApps = installedPackages.filter(pkg => pkg.toLowerCase().includes(query));
+      renderModalPackageList(currentFilteredModalApps);
+      updateModalSelectionUI();
+    }
+
+    function updateModalSelectionUI() {
+      const count = modalSelectedPackages.size;
+      document.getElementById("modalSelectedCountText").textContent = "Đã chọn: " + count;
+      const btnConfirm = document.getElementById("btnModalConfirmAdd");
+      btnConfirm.textContent = "+ Thêm vào danh sách (" + count + ")";
+      btnConfirm.disabled = count === 0;
+
+      const chkSelectAll = document.getElementById("chkModalSelectAll");
+      if (currentFilteredModalApps.length > 0) {
+        chkSelectAll.disabled = false;
+        chkSelectAll.checked = currentFilteredModalApps.every(p => modalSelectedPackages.has(p));
+      } else {
+        chkSelectAll.disabled = true;
+        chkSelectAll.checked = false;
+      }
+    }
+
+    function toggleModalSelectAll(checked) {
+      if (checked) {
+        currentFilteredModalApps.forEach(p => modalSelectedPackages.add(p));
+      } else {
+        currentFilteredModalApps.forEach(p => modalSelectedPackages.delete(p));
+      }
+      renderModalPackageList(currentFilteredModalApps);
+      updateModalSelectionUI();
+    }
+
+    function toggleModalPkg(pkg) {
+      if (modalSelectedPackages.has(pkg)) {
+        modalSelectedPackages.delete(pkg);
+      } else {
+        modalSelectedPackages.add(pkg);
+      }
+      renderModalPackageList(currentFilteredModalApps);
+      updateModalSelectionUI();
+    }
+
+    function renderModalPackageList(list) {
+      const listEl = document.getElementById("modalPackageList");
+      listEl.innerHTML = "";
+      if (list.length === 0) {
+        listEl.innerHTML = '<li class="list-row"><span class="pkg-name" style="color:var(--text-muted)">Không tìm thấy ứng dụng</span></li>';
+        return;
+      }
+
+      list.slice(0, 150).forEach(pkg => {
+        const isChecked = modalSelectedPackages.has(pkg);
+        const li = document.createElement("li");
+        li.className = "list-row" + (isChecked ? " selected" : "");
+        li.onclick = (e) => {
+          if (e.target.tagName !== "BUTTON") {
+            toggleModalPkg(pkg);
+          }
+        };
+
+        li.innerHTML = '<div style="display:flex; align-items:center; flex:1; min-width:0;">' +
+            '<input type="checkbox" class="app-checkbox" ' + (isChecked ? 'checked' : '') + ' onclick="event.stopPropagation(); toggleModalPkg(\'' + pkg + '\')">' +
+            '<span class="pkg-name">' + pkg + '</span>' +
+          '</div>' +
+          '<button class="btn btn-secondary btn-sm" style="flex-shrink:0; padding:3px 8px; font-size:11px;" onclick="event.stopPropagation(); quickAddSingleFromPicker(\'' + pkg + '\')">+ Thêm ngay</button>';
+        listEl.appendChild(li);
+      });
+    }
+
+    function quickAddSingleFromPicker(pkg) {
+      closePackagePicker();
+      if (currentPickerTarget === "target") {
+        addTargetPackage(pkg);
+      } else {
+        addKeystorePackage(pkg);
+      }
+    }
+
+    function confirmAddSelectedPackages() {
+      if (modalSelectedPackages.size === 0) return;
+      const count = modalSelectedPackages.size;
+
+      if (currentPickerTarget === "target") {
+        modalSelectedPackages.forEach(pkg => {
+          if (!targetApps.includes(pkg)) {
+            targetApps.push(pkg);
+            pendingAffectedPackages.add(pkg);
+          }
+        });
+        renderTargetList();
+        setUnsavedChanges(true, "Đã thêm " + count + " ứng dụng mục tiêu");
+      } else {
+        modalSelectedPackages.forEach(pkg => {
+          if (!keystoreApps.includes(pkg)) {
+            keystoreApps.push(pkg);
+            pendingAffectedPackages.add(pkg);
+          }
+        });
+        renderKeystoreList();
+        setUnsavedChanges(true, "Đã thêm " + count + " ứng dụng bảo vệ Keystore");
+      }
+
+      closePackagePicker();
+      showToast("Đã thêm " + count + " ứng dụng. Nhấn 'Lưu & Áp dụng' để kích hoạt!");
+    }
+
+    // Khởi tạo ứng dụng khi DOM sẵn sàng
+    window.addEventListener("DOMContentLoaded", async () => {
+      loadStatus();
+      loadInstalledPackages();
+    });
+  </script>
+</body>
+</html>

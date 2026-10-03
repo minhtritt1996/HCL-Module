@@ -1,0 +1,44 @@
+name: Release Module
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        shell: bash
+        run: |
+          set -euo pipefail
+          VERSION="$(sed -n 's/^version=//p' module/module.prop | head -n1)"
+          VERSION="${VERSION#v}"
+          test -n "$VERSION"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Build module ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p dist
+          cd module
+          zip -r "../dist/HyperOS-Compatibility-Layer-v${{ steps.version.outputs.version }}.zip" . -x '*.DS_Store'
+          cd ..
+          unzip -t "dist/HyperOS-Compatibility-Layer-v${{ steps.version.outputs.version }}.zip"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release create "${GITHUB_REF_NAME}"             "dist/HyperOS-Compatibility-Layer-v${{ steps.version.outputs.version }}.zip"             --generate-notes             --title "HyperOS Compatibility Layer ${GITHUB_REF_NAME}"

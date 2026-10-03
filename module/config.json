@@ -1,0 +1,21 @@
+{
+  "version": "1.4.3",
+  "guardian": {
+    "enabled": true,
+    "interval_seconds": 120
+  },
+  "attestation": {
+    "hw_attest_targets": [
+      "com.sacombank.ewallet"
+    ],
+    "auto_detect_fintech": false,
+    "fintech_regex": "bank|vnpay|fintech|wallet|smartbanking|digibank|zalopay|momo",
+    "exclude_keystore_protect": []
+  },
+  "hardware": {
+    "auto_detect": true,
+    "custom_model": "",
+    "custom_device": "",
+    "spoof_uname": true
+  }
+}
